@@ -30,11 +30,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jws/sign"
-	"github.com/lestrrat-go/jwx/jws/verify"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
+	"github.com/repenno/jwx-opa/jws/sign"
+	"github.com/repenno/jwx-opa/jws/verify"
 )
 
 // Sign is a short way to generate a JWS in compact serialization

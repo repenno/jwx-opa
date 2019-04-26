@@ -13,10 +13,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/internal/base64"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/base64"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
 	"github.com/stretchr/testify/assert"
 )
 

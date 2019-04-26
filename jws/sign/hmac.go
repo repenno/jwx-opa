@@ -6,8 +6,8 @@ import (
 	"crypto/sha512"
 	"hash"
 
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 var HMACSignFuncs = map[jwa.SignatureAlgorithm]hmacSignFunc{}

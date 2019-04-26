@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/lestrrat-go/jwx/internal/base64"
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/base64"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 func newRSAPublicKey(key *rsa.PublicKey) (*RSAPublicKey, error) {

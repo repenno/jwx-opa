@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 const (

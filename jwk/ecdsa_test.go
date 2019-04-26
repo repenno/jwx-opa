@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
 	"github.com/stretchr/testify/assert"
 )
 

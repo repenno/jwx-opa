@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/repenno/jwx-opa/jwt"
 	"github.com/stretchr/testify/assert"
 )
 

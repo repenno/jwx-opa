@@ -1,15 +1,15 @@
 package jws
 
 import (
-	"github.com/lestrrat-go/jwx/internal/option"
-	"github.com/lestrrat-go/jwx/jws/sign"
+	"github.com/repenno/jwx-opa/internal/option"
+	"github.com/repenno/jwx-opa/jws/sign"
 )
 
 type Option = option.Interface
 
 const (
-	optkeyPayloadSigner    = `payload-signer`
-	optkeyHeaders          = `headers`
+	optkeyPayloadSigner = `payload-signer`
+	optkeyHeaders       = `headers`
 )
 
 func WithSigner(signer sign.Signer, key interface{}, public, protected Headers) Option {

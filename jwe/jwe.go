@@ -7,11 +7,11 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 
-	"github.com/lestrrat-go/jwx/buffer"
-	"github.com/lestrrat-go/jwx/internal/debug"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/buffer"
+	"github.com/repenno/jwx-opa/internal/debug"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
 )
 
 // Encrypt takes the plaintext payload and encrypts it in JWE compact format.

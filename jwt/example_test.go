@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwt"
 )
 
 func ExampleSignAndParse() {
@@ -53,7 +53,7 @@ func ExampleSignAndParse() {
 
 func ExampleToken() {
 	t := jwt.New()
-	t.Set(jwt.SubjectKey, `https://github.com/lestrrat-go/jwx/jwt`)
+	t.Set(jwt.SubjectKey, `https://github.com/repenno/jwx-opa/jwt`)
 	t.Set(jwt.AudienceKey, `Golang Users`)
 	t.Set(jwt.IssuedAtKey, time.Unix(aLongLongTimeAgo, 0))
 	t.Set(`privateClaimKey`, `Hello, World!`)
@@ -78,11 +78,11 @@ func ExampleToken() {
 	//     "Golang Users"
 	//   ],
 	//   "iat": 233431200,
-	//   "sub": "https://github.com/lestrrat-go/jwx/jwt",
+	//   "sub": "https://github.com/repenno/jwx-opa/jwt",
 	//   "privateClaimKey": "Hello, World!"
 	// }
 	// aud -> '[Golang Users]'
 	// iat -> '1977-05-25T18:00:00Z'
 	// privateClaimKey -> 'Hello, World!'
-	// sub -> 'https://github.com/lestrrat-go/jwx/jwt'
+	// sub -> 'https://github.com/repenno/jwx-opa/jwt'
 }

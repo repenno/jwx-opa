@@ -4,8 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/json"
-	"github.com/lestrrat-go/jwx/buffer"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/buffer"
 	"math/big"
 )
 

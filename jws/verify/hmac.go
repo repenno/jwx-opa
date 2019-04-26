@@ -2,9 +2,9 @@ package verify
 
 import (
 	"crypto/hmac"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jws/sign"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jws/sign"
 )
 
 func newHMAC(alg jwa.SignatureAlgorithm) (*HMACVerifier, error) {

@@ -1,9 +1,9 @@
 package jwe
 
 import (
-	"github.com/lestrrat-go/jwx/internal/debug"
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/debug"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 func (c GenericContentCrypt) Algorithm() jwa.ContentEncryptionAlgorithm {

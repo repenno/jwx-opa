@@ -1,7 +1,7 @@
 package jwt_test
 
 import (
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/repenno/jwx-opa/jwt"
 	"testing"
 )
 

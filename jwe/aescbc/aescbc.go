@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/lestrrat-go/jwx/internal/debug"
-	"github.com/lestrrat-go/jwx/internal/padbuf"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/debug"
+	"github.com/repenno/jwx-opa/internal/padbuf"
 )
 
 const (

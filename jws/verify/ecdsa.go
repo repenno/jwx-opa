@@ -5,8 +5,8 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 var ecdsaVerifyFuncs = map[jwa.SignatureAlgorithm]ecdsaVerifyFunc{}

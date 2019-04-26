@@ -10,9 +10,9 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jws"
 )
 
 // ParseString calls Parse with the given string

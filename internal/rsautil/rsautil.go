@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/lestrrat-go/jwx/buffer"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/buffer"
 )
 
 type rawkey struct {

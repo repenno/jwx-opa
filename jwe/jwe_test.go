@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/internal/rsautil"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwe"
+	"github.com/repenno/jwx-opa/internal/rsautil"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwe"
 	"github.com/stretchr/testify/assert"
 )
 

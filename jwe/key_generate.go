@@ -7,10 +7,10 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/lestrrat-go/jwx/internal/concatkdf"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/concatkdf"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
 )
 
 // Bytes returns the byte from this ByteKey

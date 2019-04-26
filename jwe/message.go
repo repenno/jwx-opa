@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/lestrrat-go/jwx/buffer"
-	"github.com/lestrrat-go/jwx/internal/debug"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/buffer"
+	"github.com/repenno/jwx-opa/internal/debug"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
 )
 
 // NewRecipient creates a Recipient object

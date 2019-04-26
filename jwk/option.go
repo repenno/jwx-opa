@@ -3,7 +3,7 @@ package jwk
 import (
 	"net/http"
 
-	"github.com/lestrrat-go/jwx/internal/option"
+	"github.com/repenno/jwx-opa/internal/option"
 )
 
 type Option = option.Interface

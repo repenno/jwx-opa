@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/repenno/jwx-opa/jwk"
 	"github.com/stretchr/testify/assert"
 )
 

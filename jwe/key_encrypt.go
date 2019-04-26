@@ -14,10 +14,10 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/lestrrat-go/jwx/internal/concatkdf"
-	"github.com/lestrrat-go/jwx/internal/debug"
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/concatkdf"
+	"github.com/repenno/jwx-opa/internal/debug"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 // NewKeyWrapEncrypt creates a key-wrap encrypter using AES-CGM.

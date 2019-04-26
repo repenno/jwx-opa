@@ -1,7 +1,7 @@
 package sign
 
 import (
-	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/repenno/jwx-opa/jwa"
 	"testing"
 )
 

@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"log"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jws"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jws"
 )
 
 func ExampleSign_JWSCompact() {

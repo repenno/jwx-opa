@@ -12,14 +12,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/buffer"
-	"github.com/lestrrat-go/jwx/internal/ecdsautil"
-	"github.com/lestrrat-go/jwx/internal/rsautil"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jws/sign"
-	"github.com/lestrrat-go/jwx/jws/verify"
+	"github.com/repenno/jwx-opa/buffer"
+	"github.com/repenno/jwx-opa/internal/ecdsautil"
+	"github.com/repenno/jwx-opa/internal/rsautil"
+	"github.com/repenno/jwx-opa/jwa"
+	"github.com/repenno/jwx-opa/jwk"
+	"github.com/repenno/jwx-opa/jws"
+	"github.com/repenno/jwx-opa/jws/sign"
+	"github.com/repenno/jwx-opa/jws/verify"
 	"github.com/stretchr/testify/assert"
 )
 

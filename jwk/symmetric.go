@@ -4,9 +4,9 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
-	"github.com/lestrrat-go/jwx/internal/base64"
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/base64"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 func newSymmetricKey(key []byte) (*SymmetricKey, error) {

@@ -1,8 +1,8 @@
 package verify
 
 import (
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 // New creates a new JWS verifier using the specified algorithm

@@ -1,8 +1,8 @@
 package jwe
 
 import (
-	"github.com/lestrrat-go/jwx/internal/debug"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/internal/debug"
 )
 
 // NewMultiEncrypt creates a new Encrypt struct. The caller is responsible

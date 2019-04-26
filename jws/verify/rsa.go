@@ -4,8 +4,8 @@ import (
 	"crypto"
 	"crypto/rsa"
 
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 var rsaVerifyFuncs = map[jwa.SignatureAlgorithm]rsaVerifyFunc{}

@@ -9,9 +9,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
+	"github.com/repenno/jwx-opa/jwk"
+	"github.com/repenno/jwx-opa/jws"
 )
 
 func main() {
