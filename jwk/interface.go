@@ -1,7 +1,6 @@
 package jwk
 
 import (
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
@@ -64,10 +63,6 @@ type Key interface {
 	// EC types would create *ecdsa.PublicKey or *ecdsa.PrivateKey,
 	// and OctetSeq types create a []byte key.
 	Materialize() (interface{}, error)
-
-	// Thumbprint returns the JWK thumbprint using the indicated
-	// hashing algorithm, according to RFC 7638
-	Thumbprint(crypto.Hash) ([]byte, error)
 }
 
 type headers interface {

@@ -1,8 +1,6 @@
 package jwk
 
 import (
-	"bytes"
-	"crypto"
 	"crypto/rsa"
 	"encoding/json"
 	"math/big"
@@ -285,27 +283,4 @@ func (k *RSAPrivateKey) ExtractMap(m map[string]interface{}) (err error) {
 		key:     &key,
 	}
 	return nil
-}
-
-// Thumbprint returns the JWK thumbprint using the indicated
-// hashing algorithm, according to RFC 7638
-func (k RSAPrivateKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
-	return rsaThumbprint(hash, &k.key.PublicKey)
-}
-
-func (k RSAPublicKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
-	return rsaThumbprint(hash, k.key)
-}
-
-func rsaThumbprint(hash crypto.Hash, key *rsa.PublicKey) ([]byte, error) {
-	var buf bytes.Buffer
-	buf.WriteString(`{"e":"`)
-	buf.WriteString(base64.EncodeUint64ToString(uint64(key.E)))
-	buf.WriteString(`","kty":"RSA","n":"`)
-	buf.WriteString(base64.EncodeToString(key.N.Bytes()))
-	buf.WriteString(`"}`)
-
-	h := hash.New()
-	buf.WriteTo(h)
-	return h.Sum(nil), nil
 }

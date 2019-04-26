@@ -1,9 +1,7 @@
 package jwk
 
 import (
-	"crypto"
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/internal/base64"
 	"github.com/repenno/jwx-opa/jwa"
@@ -31,16 +29,6 @@ func (s SymmetricKey) Materialize() (interface{}, error) {
 // Octets returns the octets in the key
 func (s SymmetricKey) Octets() []byte {
 	return s.key
-}
-
-// Thumbprint returns the JWK thumbprint using the indicated
-// hashing algorithm, according to RFC 7638
-func (s SymmetricKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
-	h := hash.New()
-	fmt.Fprintf(h, `{"k":"`)
-	fmt.Fprintf(h, base64.EncodeToString(s.key))
-	fmt.Fprintf(h, `","kty":"oct"}`)
-	return h.Sum(nil), nil
 }
 
 func (s *SymmetricKey) ExtractMap(m map[string]interface{}) (err error) {

@@ -68,28 +68,6 @@ func ecdsaThumbprint(hash crypto.Hash, crv, x, y string) []byte {
 	return h.Sum(nil)
 }
 
-// Thumbprint returns the JWK thumbprint using the indicated
-// hashing algorithm, according to RFC 7638
-func (k ECDSAPublicKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
-	return ecdsaThumbprint(
-		hash,
-		k.key.Curve.Params().Name,
-		base64.EncodeToString(k.key.X.Bytes()),
-		base64.EncodeToString(k.key.Y.Bytes()),
-	), nil
-}
-
-// Thumbprint returns the JWK thumbprint using the indicated
-// hashing algorithm, according to RFC 7638
-func (k ECDSAPrivateKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
-	return ecdsaThumbprint(
-		hash,
-		k.key.Curve.Params().Name,
-		base64.EncodeToString(k.key.X.Bytes()),
-		base64.EncodeToString(k.key.Y.Bytes()),
-	), nil
-}
-
 // Materialize returns the EC-DSA private key represented by this JWK
 func (k ECDSAPrivateKey) Materialize() (interface{}, error) {
 	return k.key, nil
