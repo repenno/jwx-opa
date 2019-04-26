@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/repenno/jwx-opa/jwa"
-	"github.com/repenno/jwx-opa/jwe"
 	"github.com/repenno/jwx-opa/jwk"
 	"github.com/repenno/jwx-opa/jws"
 	"github.com/repenno/jwx-opa/jwt"
@@ -86,31 +85,4 @@ func ExampleJWS() {
 	}
 
 	log.Printf("signed message verified! -> %s", verified)
-}
-
-func ExampleJWE() {
-	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		log.Printf("failed to generate private key: %s", err)
-		return
-	}
-
-	payload := []byte("Lorem Ipsum")
-
-	encrypted, err := jwe.Encrypt(payload, jwa.RSA1_5, &privkey.PublicKey, jwa.A128CBC_HS256, jwa.NoCompress)
-	if err != nil {
-		log.Printf("failed to encrypt payload: %s", err)
-		return
-	}
-
-	decrypted, err := jwe.Decrypt(encrypted, jwa.RSA1_5, privkey)
-	if err != nil {
-		log.Printf("failed to decrypt: %s", err)
-		return
-	}
-
-	if string(decrypted) != "Lorem Ipsum" {
-		log.Printf("WHAT?!")
-		return
-	}
 }
