@@ -22,60 +22,6 @@ func main() {
 func _main() error {
 	typs := []typ{
 		{
-			name:     `CompressionAlgorithm`,
-			comment:  `CompressionAlgorithm represents the compression algorithms as described in https://tools.ietf.org/html/rfc7518#section-7.3`,
-			filename: `compression.go`,
-			elements: []element{
-				{
-					name:    `NoCompress`,
-					value:   ``,
-					comment: `No compression`,
-				},
-				{
-					name:    `Deflate`,
-					value:   `DEF`,
-					comment: `DEFLATE (RFC 1951)`,
-				},
-			},
-		},
-		{
-			name:     `ContentEncryptionAlgorithm`,
-			comment:  `ContentEncryptionAlgorithm represents the various encryption algorithms as described in https://tools.ietf.org/html/rfc7518#section-5`,
-			filename: `content_encryption.go`,
-			elements: []element{
-				{
-					name:    `A128CBC_HS256`,
-					value:   `A128CBC-HS256`,
-					comment: `AES-CBC + HMAC-SHA256 (128)`,
-				},
-				{
-					name:    `A192CBC_HS384`,
-					value:   `A192CBC-HS384`,
-					comment: `AES-CBC + HMAC-SHA384 (192)`,
-				},
-				{
-					name:    `A256CBC_HS512`,
-					value:   `A256CBC-HS512`,
-					comment: `AES-CBC + HMAC-SHA512 (256)`,
-				},
-				{
-					name:    `A128GCM`,
-					value:   `A128GCM`,
-					comment: `AES-GCM (128)`,
-				},
-				{
-					name:    `A192GCM`,
-					value:   `A192GCM`,
-					comment: `AES-GCM (192)`,
-				},
-				{
-					name:    `A256GCM`,
-					value:   `A256GCM`,
-					comment: `AES-GCM (256)`,
-				},
-			},
-		},
-		{
 			name:     `KeyType`,
 			comment:  `KeyType represents the key type ("kty") that are supported`,
 			filename: "key_type.go",
