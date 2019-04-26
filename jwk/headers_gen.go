@@ -3,7 +3,6 @@
 package jwk
 
 import (
-	"crypto/x509"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -11,15 +10,11 @@ import (
 )
 
 const (
-	AlgorithmKey              = "alg"
-	KeyIDKey                  = "kid"
-	KeyTypeKey                = "kty"
-	KeyUsageKey               = "use"
-	KeyOpsKey                 = "key_ops"
-	X509CertChainKey          = "x5c"
-	X509CertThumbprintKey     = "x5t"
-	X509CertThumbprintS256Key = "x5t#S256"
-	X509URLKey                = "x5u"
+	AlgorithmKey = "alg"
+	KeyIDKey     = "kid"
+	KeyTypeKey   = "kty"
+	KeyUsageKey  = "use"
+	KeyOpsKey    = "key_ops"
 )
 
 type Headers interface {
@@ -34,23 +29,15 @@ type Headers interface {
 	KeyType() jwa.KeyType
 	KeyUsage() string
 	KeyOps() KeyOperationList
-	X509CertChain() []*x509.Certificate
-	X509CertThumbprint() string
-	X509CertThumbprintS256() string
-	X509URL() string
 }
 
 type StandardHeaders struct {
-	algorithm              *string           // https://tools.ietf.org/html/rfc7517#section-4.4
-	keyID                  *string           // https://tools.ietf.org/html/rfc7515#section-4.1.4
-	keyType                *jwa.KeyType      // https://tools.ietf.org/html/rfc7517#section-4.1
-	keyUsage               *string           // https://tools.ietf.org/html/rfc7517#section-4.2
-	keyops                 KeyOperationList  // https://tools.ietf.org/html/rfc7517#section-4.3
-	x509CertChain          *CertificateChain // https://tools.ietf.org/html/rfc7515#section-4.1.6
-	x509CertThumbprint     *string           // https://tools.ietf.org/html/rfc7515#section-4.1.7
-	x509CertThumbprintS256 *string           // https://tools.ietf.org/html/rfc7515#section-4.1.8
-	x509URL                *string           // https://tools.ietf.org/html/rfc7515#section-4.1.5
-	privateParams          map[string]interface{}
+	algorithm     *string          // https://tools.ietf.org/html/rfc7517#section-4.4
+	keyID         *string          // https://tools.ietf.org/html/rfc7515#section-4.1.4
+	keyType       *jwa.KeyType     // https://tools.ietf.org/html/rfc7517#section-4.1
+	keyUsage      *string          // https://tools.ietf.org/html/rfc7517#section-4.2
+	keyops        KeyOperationList // https://tools.ietf.org/html/rfc7517#section-4.3
+	privateParams map[string]interface{}
 }
 
 func (h *StandardHeaders) Remove(s string) {
@@ -89,31 +76,6 @@ func (h *StandardHeaders) KeyOps() KeyOperationList {
 	return h.keyops
 }
 
-func (h *StandardHeaders) X509CertChain() []*x509.Certificate {
-	return h.x509CertChain.Get()
-}
-
-func (h *StandardHeaders) X509CertThumbprint() string {
-	if v := h.x509CertThumbprint; v != nil {
-		return *v
-	}
-	return ""
-}
-
-func (h *StandardHeaders) X509CertThumbprintS256() string {
-	if v := h.x509CertThumbprintS256; v != nil {
-		return *v
-	}
-	return ""
-}
-
-func (h *StandardHeaders) X509URL() string {
-	if v := h.x509URL; v != nil {
-		return *v
-	}
-	return ""
-}
-
 func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	switch name {
 	case AlgorithmKey:
@@ -146,30 +108,6 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 			return nil, false
 		}
 		return v, true
-	case X509CertChainKey:
-		v := h.x509CertChain
-		if v == nil {
-			return nil, false
-		}
-		return v.Get(), true
-	case X509CertThumbprintKey:
-		v := h.x509CertThumbprint
-		if v == nil {
-			return nil, false
-		}
-		return *v, true
-	case X509CertThumbprintS256Key:
-		v := h.x509CertThumbprintS256
-		if v == nil {
-			return nil, false
-		}
-		return *v, true
-	case X509URLKey:
-		v := h.x509URL
-		if v == nil {
-			return nil, false
-		}
-		return *v, true
 	default:
 		v, ok := h.privateParams[name]
 		return v, ok
@@ -213,31 +151,6 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 			return errors.Wrapf(err, `invalid value for %s key`, KeyOpsKey)
 		}
 		return nil
-	case X509CertChainKey:
-		var acceptor CertificateChain
-		if err := acceptor.Accept(value); err != nil {
-			return errors.Wrapf(err, `invalid value for %s key`, X509CertChainKey)
-		}
-		h.x509CertChain = &acceptor
-		return nil
-	case X509CertThumbprintKey:
-		if v, ok := value.(string); ok {
-			h.x509CertThumbprint = &v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509CertThumbprintKey, value)
-	case X509CertThumbprintS256Key:
-		if v, ok := value.(string); ok {
-			h.x509CertThumbprintS256 = &v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509CertThumbprintS256Key, value)
-	case X509URLKey:
-		if v, ok := value.(string); ok {
-			h.x509URL = &v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509URLKey, value)
 	default:
 		if h.privateParams == nil {
 			h.privateParams = map[string]interface{}{}
@@ -269,18 +182,6 @@ func (h StandardHeaders) PopulateMap(m map[string]interface{}) error {
 	}
 	if v, ok := h.Get(KeyOpsKey); ok {
 		m[KeyOpsKey] = v
-	}
-	if v, ok := h.Get(X509CertChainKey); ok {
-		m[X509CertChainKey] = v
-	}
-	if v, ok := h.Get(X509CertThumbprintKey); ok {
-		m[X509CertThumbprintKey] = v
-	}
-	if v, ok := h.Get(X509CertThumbprintS256Key); ok {
-		m[X509CertThumbprintS256Key] = v
-	}
-	if v, ok := h.Get(X509URLKey); ok {
-		m[X509URLKey] = v
 	}
 
 	return nil
@@ -321,30 +222,6 @@ func (h *StandardHeaders) ExtractMap(m map[string]interface{}) (err error) {
 		}
 		delete(m, KeyOpsKey)
 	}
-	if v, ok := m[X509CertChainKey]; ok {
-		if err := h.Set(X509CertChainKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, X509CertChainKey)
-		}
-		delete(m, X509CertChainKey)
-	}
-	if v, ok := m[X509CertThumbprintKey]; ok {
-		if err := h.Set(X509CertThumbprintKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, X509CertThumbprintKey)
-		}
-		delete(m, X509CertThumbprintKey)
-	}
-	if v, ok := m[X509CertThumbprintS256Key]; ok {
-		if err := h.Set(X509CertThumbprintS256Key, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, X509CertThumbprintS256Key)
-		}
-		delete(m, X509CertThumbprintS256Key)
-	}
-	if v, ok := m[X509URLKey]; ok {
-		if err := h.Set(X509URLKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, X509URLKey)
-		}
-		delete(m, X509URLKey)
-	}
 	// Fix: A nil map is different from a empty map as far as deep.equal is concerned
 	if len(m) > 0 {
 		h.privateParams = m
@@ -354,7 +231,7 @@ func (h *StandardHeaders) ExtractMap(m map[string]interface{}) (err error) {
 }
 
 func (h StandardHeaders) Walk(f func(string, interface{}) error) error {
-	for _, key := range []string{AlgorithmKey, KeyIDKey, KeyTypeKey, KeyUsageKey, KeyOpsKey, X509CertChainKey, X509CertThumbprintKey, X509CertThumbprintS256Key, X509URLKey} {
+	for _, key := range []string{AlgorithmKey, KeyIDKey, KeyTypeKey, KeyUsageKey, KeyOpsKey} {
 		if v, ok := h.Get(key); ok {
 			if err := f(key, v); err != nil {
 				return errors.Wrapf(err, `walk function returned error for %s`, key)

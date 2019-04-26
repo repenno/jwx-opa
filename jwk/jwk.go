@@ -9,10 +9,6 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -65,60 +61,6 @@ func New(key interface{}) (Key, error) {
 	default:
 		return nil, errors.Errorf(`invalid key type %T`, key)
 	}
-}
-
-// Fetch fetches a JWK resource specified by a URL
-func Fetch(urlstring string, options ...Option) (*Set, error) {
-	u, err := url.Parse(urlstring)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to parse url`)
-	}
-
-	switch u.Scheme {
-	case "http", "https":
-		return FetchHTTP(urlstring, options...)
-	case "file":
-		f, err := os.Open(u.Path)
-		if err != nil {
-			return nil, errors.Wrap(err, `failed to open jwk file`)
-		}
-		defer f.Close()
-
-		buf, err := ioutil.ReadAll(f)
-		if err != nil {
-			return nil, errors.Wrap(err, `failed read content from jwk file`)
-		}
-		return ParseBytes(buf)
-	}
-	return nil, errors.Errorf(`invalid url scheme %s`, u.Scheme)
-}
-
-// FetchHTTP fetches the remote JWK and parses its contents
-func FetchHTTP(jwkurl string, options ...Option) (*Set, error) {
-	var httpcl HTTPClient = http.DefaultClient
-	for _, option := range options {
-		switch option.Name() {
-		case optkeyHTTPClient:
-			httpcl = option.Value().(HTTPClient)
-		}
-	}
-
-	res, err := httpcl.Get(jwkurl)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch remote JWK")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("failed to fetch remote JWK (status != 200)")
-	}
-
-	buf, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read JWK HTTP response body")
-	}
-
-	return ParseBytes(buf)
 }
 
 func (set *Set) UnmarshalJSON(data []byte) error {

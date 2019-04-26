@@ -322,17 +322,6 @@ func Verify(buf []byte, alg jwa.SignatureAlgorithm, key interface{}) (ret []byte
 	return decodedPayload, nil
 }
 
-// VerifyWithJKU verifies the JWS message using a remote JWK
-// file represented in the url.
-func VerifyWithJKU(buf []byte, jwkurl string) ([]byte, error) {
-	key, err := jwk.FetchHTTP(jwkurl)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to fetch jwk via HTTP`)
-	}
-
-	return VerifyWithJWKSet(buf, key, nil)
-}
-
 // VerifyWithJWK verifies the JWS message using the specified JWK
 func VerifyWithJWK(buf []byte, key jwk.Key) (payload []byte, err error) {
 

@@ -100,38 +100,6 @@ func generateHeaders() error {
 			key:     `kid`,
 			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.4`,
 		},
-		{
-			name:    `x509URL`,
-			method:  `X509URL`,
-			typ:     `*string`,
-			key:     `x5u`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.5`,
-		},
-		{
-			name:       `x509CertChain`,
-			method:     `X509CertChain`,
-			typ:        `*CertificateChain`,
-			key:        `x5c`,
-			comment:    `https://tools.ietf.org/html/rfc7515#section-4.1.6`,
-			hasAccept:  true,
-			hasGet:     true,
-			noDeref:    true,
-			returnType: `[]*x509.Certificate`,
-		},
-		{
-			name:    `x509CertThumbprint`,
-			method:  `X509CertThumbprint`,
-			typ:     `*string`,
-			key:     `x5t`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.7`,
-		},
-		{
-			name:    `x509CertThumbprintS256`,
-			method:  `X509CertThumbprintS256`,
-			typ:     `*string`,
-			key:     `x5t#S256`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.8`,
-		},
 	}
 
 	sort.Slice(fields, func(i, j int) bool {
@@ -143,7 +111,7 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n// This file is auto-generated. DO NOT EDIT")
 	fmt.Fprintf(&buf, "\n\npackage jwk")
 	fmt.Fprintf(&buf, "\n\nimport (")
-	for _, pkg := range []string{"crypto/x509", "fmt"} {
+	for _, pkg := range []string{"fmt"} {
 		fmt.Fprintf(&buf, "\n%s", strconv.Quote(pkg))
 	}
 	fmt.Fprintf(&buf, "\n\n")

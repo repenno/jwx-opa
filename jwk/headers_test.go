@@ -12,13 +12,10 @@ import (
 func TestHeader(t *testing.T) {
 	t.Run("Roundtrip", func(t *testing.T) {
 		values := map[string]interface{}{
-			jwk.KeyIDKey:                  "helloworld01",
-			jwk.KeyTypeKey:                jwa.RSA,
-			jwk.KeyOpsKey:                 jwk.KeyOperationList{jwk.KeyOpSign},
-			jwk.KeyUsageKey:               "sig",
-			jwk.X509CertThumbprintKey:     "thumbprint",
-			jwk.X509CertThumbprintS256Key: "thumbprint256",
-			jwk.X509URLKey:                "cert1",
+			jwk.KeyIDKey:    "helloworld01",
+			jwk.KeyTypeKey:  jwa.RSA,
+			jwk.KeyOpsKey:   jwk.KeyOperationList{jwk.KeyOpSign},
+			jwk.KeyUsageKey: "sig",
 		}
 
 		var h jwk.StandardHeaders
@@ -49,15 +46,11 @@ func TestHeader(t *testing.T) {
 		}
 		dummy := &dummyStruct{1, 3.4}
 		values := map[string]interface{}{
-			jwk.AlgorithmKey:              dummy,
-			jwk.KeyIDKey:                  dummy,
-			jwk.KeyTypeKey:                dummy,
-			jwk.KeyUsageKey:               dummy,
-			jwk.KeyOpsKey:                 dummy,
-			jwk.X509CertChainKey:          dummy,
-			jwk.X509CertThumbprintKey:     dummy,
-			jwk.X509CertThumbprintS256Key: dummy,
-			jwk.X509URLKey:                dummy,
+			jwk.AlgorithmKey: dummy,
+			jwk.KeyIDKey:     dummy,
+			jwk.KeyTypeKey:   dummy,
+			jwk.KeyUsageKey:  dummy,
+			jwk.KeyOpsKey:    dummy,
 		}
 
 		var h jwk.StandardHeaders
@@ -95,15 +88,11 @@ func TestHeader(t *testing.T) {
 		}
 		dummy := &dummyStruct{1, 3.4}
 		values := map[string]interface{}{
-			jwk.AlgorithmKey:              dummy,
-			jwk.KeyIDKey:                  dummy,
-			jwk.KeyTypeKey:                dummy,
-			jwk.KeyUsageKey:               dummy,
-			jwk.KeyOpsKey:                 dummy,
-			jwk.X509CertChainKey:          dummy,
-			jwk.X509CertThumbprintKey:     dummy,
-			jwk.X509CertThumbprintS256Key: dummy,
-			jwk.X509URLKey:                dummy,
+			jwk.AlgorithmKey: dummy,
+			jwk.KeyIDKey:     dummy,
+			jwk.KeyTypeKey:   dummy,
+			jwk.KeyUsageKey:  dummy,
+			jwk.KeyOpsKey:    dummy,
 		}
 
 		var h jwk.StandardHeaders
