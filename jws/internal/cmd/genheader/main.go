@@ -115,38 +115,6 @@ func generateHeaders() error {
 			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.9`,
 			jsonTag: "`" + `json:"typ,omitempty"` + "`",
 		},
-		{
-			name:    `JWSx509CertChain`,
-			method:  `X509CertChain`,
-			typ:     `[]string`,
-			key:     `x5c`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.6`,
-			jsonTag: "`" + `json:"x5c,omitempty"` + "`",
-		},
-		{
-			name:    `JWSx509CertThumbprint`,
-			method:  `X509CertThumbprint`,
-			typ:     `string`,
-			key:     `x5t`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.7`,
-			jsonTag: "`" + `json:"x5t,omitempty"` + "`",
-		},
-		{
-			name:    `JWSx509CertThumbprintS256`,
-			method:  `X509CertThumbprintS256`,
-			typ:     `string`,
-			key:     `x5t#S256`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.8`,
-			jsonTag: "`" + `json:"x5t#S256,omitempty"` + "`",
-		},
-		{
-			name:    `JWSx509URL`,
-			method:  `X509URL`,
-			typ:     `string`,
-			key:     `x5u`,
-			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.5`,
-			jsonTag: "`" + `json:"x5u,omitempty"` + "`",
-		},
 	}
 
 	sort.Slice(fields, func(i, j int) bool {

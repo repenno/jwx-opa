@@ -8,17 +8,13 @@ import (
 )
 
 const (
-	AlgorithmKey              = "alg"
-	ContentTypeKey            = "cty"
-	CriticalKey               = "crit"
-	JWKKey                    = "jwk"
-	JWKSetURLKey              = "jku"
-	KeyIDKey                  = "kid"
-	TypeKey                   = "typ"
-	X509CertChainKey          = "x5c"
-	X509CertThumbprintKey     = "x5t"
-	X509CertThumbprintS256Key = "x5t#S256"
-	X509URLKey                = "x5u"
+	AlgorithmKey   = "alg"
+	ContentTypeKey = "cty"
+	CriticalKey    = "crit"
+	JWKKey         = "jwk"
+	JWKSetURLKey   = "jku"
+	KeyIDKey       = "kid"
+	TypeKey        = "typ"
 )
 
 type Headers interface {
@@ -28,18 +24,14 @@ type Headers interface {
 }
 
 type StandardHeaders struct {
-	JWSalgorithm              jwa.SignatureAlgorithm `json:"alg,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.1
-	JWScontentType            string                 `json:"cty,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.10
-	JWScritical               []string               `json:"crit,omitempty"`     // https://tools.ietf.org/html/rfc7515#section-4.1.11
-	JWSjwk                    *jwk.Set               `json:"jwk,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.3
-	JWSjwkSetURL              string                 `json:"jku,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.2
-	JWSkeyID                  string                 `json:"kid,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.4
-	JWStyp                    string                 `json:"typ,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.9
-	JWSx509CertChain          []string               `json:"x5c,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.6
-	JWSx509CertThumbprint     string                 `json:"x5t,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.7
-	JWSx509CertThumbprintS256 string                 `json:"x5t#S256,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.8
-	JWSx509URL                string                 `json:"x5u,omitempty"`      // https://tools.ietf.org/html/rfc7515#section-4.1.5
-	privateParams             map[string]interface{}
+	JWSalgorithm   jwa.SignatureAlgorithm `json:"alg,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.1
+	JWScontentType string                 `json:"cty,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.10
+	JWScritical    []string               `json:"crit,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.11
+	JWSjwk         *jwk.Set               `json:"jwk,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.3
+	JWSjwkSetURL   string                 `json:"jku,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.2
+	JWSkeyID       string                 `json:"kid,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.4
+	JWStyp         string                 `json:"typ,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.9
+	privateParams  map[string]interface{}
 }
 
 func (h *StandardHeaders) Algorithm() jwa.SignatureAlgorithm {
@@ -86,30 +78,6 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 		return v, true
 	case TypeKey:
 		v := h.JWStyp
-		if v == "" {
-			return nil, false
-		}
-		return v, true
-	case X509CertChainKey:
-		v := h.JWSx509CertChain
-		if len(v) == 0 {
-			return nil, false
-		}
-		return v, true
-	case X509CertThumbprintKey:
-		v := h.JWSx509CertThumbprint
-		if v == "" {
-			return nil, false
-		}
-		return v, true
-	case X509CertThumbprintS256Key:
-		v := h.JWSx509CertThumbprintS256
-		if v == "" {
-			return nil, false
-		}
-		return v, true
-	case X509URLKey:
-		v := h.JWSx509URL
 		if v == "" {
 			return nil, false
 		}
@@ -164,30 +132,6 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, TypeKey, value)
-	case X509CertChainKey:
-		if v, ok := value.([]string); ok {
-			h.JWSx509CertChain = v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509CertChainKey, value)
-	case X509CertThumbprintKey:
-		if v, ok := value.(string); ok {
-			h.JWSx509CertThumbprint = v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509CertThumbprintKey, value)
-	case X509CertThumbprintS256Key:
-		if v, ok := value.(string); ok {
-			h.JWSx509CertThumbprintS256 = v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509CertThumbprintS256Key, value)
-	case X509URLKey:
-		if v, ok := value.(string); ok {
-			h.JWSx509URL = v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, X509URLKey, value)
 	default:
 		if h.privateParams == nil {
 			h.privateParams = map[string]interface{}{}
