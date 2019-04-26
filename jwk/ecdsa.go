@@ -1,11 +1,9 @@
 package jwk
 
 import (
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/pkg/errors"
@@ -54,18 +52,6 @@ func (k ECDSAPublicKey) Curve() jwa.EllipticCurveAlgorithm {
 
 func (k ECDSAPrivateKey) Curve() jwa.EllipticCurveAlgorithm {
 	return jwa.EllipticCurveAlgorithm(k.key.PublicKey.Curve.Params().Name)
-}
-
-func ecdsaThumbprint(hash crypto.Hash, crv, x, y string) []byte {
-	h := hash.New()
-	fmt.Fprintf(h, `{"crv":"`)
-	fmt.Fprintf(h, crv)
-	fmt.Fprintf(h, `","kty":"EC","x":"`)
-	fmt.Fprintf(h, x)
-	fmt.Fprintf(h, `","y":"`)
-	fmt.Fprintf(h, y)
-	fmt.Fprintf(h, `"}`)
-	return h.Sum(nil)
 }
 
 // Materialize returns the EC-DSA private key represented by this JWK

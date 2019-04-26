@@ -3,7 +3,6 @@ package jwk
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/x509"
 	"errors"
 )
 
@@ -18,10 +17,6 @@ const (
 	// this key should be used for encryptiong
 	ForEncryption KeyUsageType = "enc"
 )
-
-type CertificateChain struct {
-	certs []*x509.Certificate
-}
 
 // Errors related to JWK
 var (
