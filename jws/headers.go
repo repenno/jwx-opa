@@ -8,82 +8,89 @@ import (
 )
 
 const (
-	AlgorithmKey   = "alg"
-	ContentTypeKey = "cty"
-	CriticalKey    = "crit"
-	JWKKey         = "jwk"
-	JWKSetURLKey   = "jku"
-	KeyIDKey       = "kid"
-	TypeKey        = "typ"
+	AlgorithmKey     = "alg"
+	ContentTypeKey   = "cty"
+	CriticalKey      = "crit"
+	JWKKey           = "jwk"
+	JWKSetURLKey     = "jku"
+	KeyIDKey         = "kid"
+	PrivateParamsKey = "privateParams"
+	TypeKey          = "typ"
 )
 
 type Headers interface {
 	Get(string) (interface{}, bool)
 	Set(string, interface{}) error
-	Algorithm() jwa.SignatureAlgorithm
+	GetAlgorithm() jwa.SignatureAlgorithm
 }
 
 type StandardHeaders struct {
-	JWSalgorithm   jwa.SignatureAlgorithm `json:"alg,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.1
-	JWScontentType string                 `json:"cty,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.10
-	JWScritical    []string               `json:"crit,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.11
-	JWSjwk         *jwk.Set               `json:"jwk,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.3
-	JWSjwkSetURL   string                 `json:"jku,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.2
-	JWSkeyID       string                 `json:"kid,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.4
-	JWStyp         string                 `json:"typ,omitempty"`  // https://tools.ietf.org/html/rfc7515#section-4.1.9
-	privateParams  map[string]interface{}
+	Algorithm     jwa.SignatureAlgorithm `json:"alg,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.1
+	ContentType   string                 `json:"cty,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.10
+	Critical      []string               `json:"crit,omitempty"`          // https://tools.ietf.org/html/rfc7515#section-4.1.11
+	JWK           *jwk.Set               `json:"jwk,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.3
+	JWKSetURL     string                 `json:"jku,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.2
+	KeyID         string                 `json:"kid,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.4
+	PrivateParams map[string]interface{} `json:"privateParams,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.9
+	Type          string                 `json:"typ,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.9
 }
 
-func (h *StandardHeaders) Algorithm() jwa.SignatureAlgorithm {
-	return h.JWSalgorithm
+func (h *StandardHeaders) GetAlgorithm() jwa.SignatureAlgorithm {
+	return h.Algorithm
 }
 
 func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	switch name {
 	case AlgorithmKey:
-		v := h.JWSalgorithm
+		v := h.Algorithm
 		if v == "" {
 			return nil, false
 		}
 		return v, true
 	case ContentTypeKey:
-		v := h.JWScontentType
+		v := h.ContentType
 		if v == "" {
 			return nil, false
 		}
 		return v, true
 	case CriticalKey:
-		v := h.JWScritical
+		v := h.Critical
 		if len(v) == 0 {
 			return nil, false
 		}
 		return v, true
 	case JWKKey:
-		v := h.JWSjwk
+		v := h.JWK
 		if v == nil {
 			return nil, false
 		}
 		return v, true
 	case JWKSetURLKey:
-		v := h.JWSjwkSetURL
+		v := h.JWKSetURL
 		if v == "" {
 			return nil, false
 		}
 		return v, true
 	case KeyIDKey:
-		v := h.JWSkeyID
+		v := h.KeyID
 		if v == "" {
 			return nil, false
 		}
 		return v, true
+	case PrivateParamsKey:
+		v := h.PrivateParams
+		if v == nil {
+			return nil, false
+		}
+		return v, true
 	case TypeKey:
-		v := h.JWStyp
+		v := h.Type
 		if v == "" {
 			return nil, false
 		}
 		return v, true
 	default:
-		v, ok := h.privateParams[name]
+		v, ok := h.PrivateParams[name]
 		return v, ok
 	}
 }
@@ -91,52 +98,57 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 func (h *StandardHeaders) Set(name string, value interface{}) error {
 	switch name {
 	case AlgorithmKey:
-		if err := h.JWSalgorithm.Accept(value); err != nil {
+		if err := h.Algorithm.Accept(value); err != nil {
 			return errors.Wrapf(err, `invalid value for %s key`, AlgorithmKey)
 		}
 		return nil
 	case ContentTypeKey:
 		if v, ok := value.(string); ok {
-			h.JWScontentType = v
+			h.ContentType = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, ContentTypeKey, value)
 	case CriticalKey:
 		if v, ok := value.([]string); ok {
-			h.JWScritical = v
+			h.Critical = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, CriticalKey, value)
 	case JWKKey:
-		v, ok := value.(*jwk.Set)
-		if ok {
-			h.JWSjwk = v
+		if v, ok := value.(*jwk.Set); ok {
+			h.JWK = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, JWKKey, value)
 	case JWKSetURLKey:
 		if v, ok := value.(string); ok {
-			h.JWSjwkSetURL = v
+			h.JWKSetURL = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, JWKSetURLKey, value)
 	case KeyIDKey:
 		if v, ok := value.(string); ok {
-			h.JWSkeyID = v
+			h.KeyID = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, KeyIDKey, value)
+	case PrivateParamsKey:
+		if v, ok := value.(map[string]interface{}); ok {
+			h.PrivateParams = v
+			return nil
+		}
+		return errors.Errorf(`invalid value for %s key: %T`, PrivateParamsKey, value)
 	case TypeKey:
 		if v, ok := value.(string); ok {
-			h.JWStyp = v
+			h.Type = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, TypeKey, value)
 	default:
-		if h.privateParams == nil {
-			h.privateParams = map[string]interface{}{}
+		if h.PrivateParams == nil {
+			h.PrivateParams = map[string]interface{}{}
 		}
-		h.privateParams[name] = value
+		h.PrivateParams[name] = value
 	}
 	return nil
 }
