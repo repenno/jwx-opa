@@ -1,5 +1,8 @@
 # jwx
 
+[![Build Status](https://travis-ci.org/repenno/jwx-opa.svg?branch=master)](https://travis-ci.org/repenno/jwx-opa)
+
+
 Implementation of various JWx technologies
 
 ## Other related libraries:
