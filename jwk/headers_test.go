@@ -107,7 +107,7 @@ func TestHeader(t *testing.T) {
 
 	t.Run("Algorithm", func(t *testing.T) {
 		var h jwk.StandardHeaders
-		for _, value := range []interface{}{jwa.RS256, jwa.RSA1_5} {
+		for _, value := range []interface{}{jwa.RS256, jwa.ES256} {
 			if !assert.NoError(t, h.Set("alg", value), "Set for alg should succeed") {
 				return
 			}

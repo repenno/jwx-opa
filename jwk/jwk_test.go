@@ -303,14 +303,8 @@ func TestAppendix(t *testing.T) {
 
 	t.Run("A3", func(t *testing.T) {
 		const (
-			key1 = `GawgguFyGrWKav7AX4VKUg`
 			key2 = `AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow`
 		)
-
-		buf1, err := base64.DecodeString(key1)
-		if !assert.NoError(t, err, "failed to decode key1") {
-			return
-		}
 
 		buf2, err := base64.DecodeString(key2)
 		if !assert.NoError(t, err, "failed to decode key2") {
@@ -319,10 +313,6 @@ func TestAppendix(t *testing.T) {
 
 		var jwksrc = []byte(`{"keys":
        [
-         {"kty":"oct",
-          "alg":"A128KW",
-          "k":"` + key1 + `"},
-
          {"kty":"oct",
           "k":"` + key2 + `",
           "kid":"HMAC key used in JWS spec Appendix A.1 example"}
@@ -337,13 +327,6 @@ func TestAppendix(t *testing.T) {
 			headers map[string]interface{}
 			key     []byte
 		}{
-			{
-				headers: map[string]interface{}{
-					jwk.KeyTypeKey:   jwa.OctetSeq,
-					jwk.AlgorithmKey: jwa.A128KW.String(),
-				},
-				key: buf1,
-			},
 			{
 				headers: map[string]interface{}{
 					jwk.KeyTypeKey: jwa.OctetSeq,
