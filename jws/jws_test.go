@@ -81,17 +81,17 @@ func TestParse(t *testing.T) {
 
 func TestRoundtrip(t *testing.T) {
 	payload := []byte("Lorem ipsum")
-	sharedkey := []byte("Avracadabra")
+	sharedKey := []byte("Avracadabra")
 
 	hmacAlgorithms := []jwa.SignatureAlgorithm{jwa.HS256, jwa.HS384, jwa.HS512}
 	for _, alg := range hmacAlgorithms {
 		t.Run("HMAC "+alg.String(), func(t *testing.T) {
-			signed, err := jws.Sign(payload, alg, sharedkey)
+			signed, err := jws.Sign(payload, alg, sharedKey)
 			if !assert.NoError(t, err, "Sign succeeds") {
 				return
 			}
 
-			verified, err := jws.Verify(signed, alg, sharedkey)
+			verified, err := jws.Verify(signed, alg, sharedKey)
 			if !assert.NoError(t, err, "Verify succeeded") {
 				return
 			}
@@ -110,7 +110,7 @@ func TestRoundtrip(t *testing.T) {
 				if !assert.NoError(t, err, `sign.New should succeed`) {
 					return
 				}
-				options = append(options, jws.WithSigner(signer, sharedkey, nil, nil))
+				options = append(options, jws.WithSigner(signer, sharedKey, nil, nil))
 			}
 			var err error
 			signed, err = jws.SignMulti(payload, options...)
@@ -120,7 +120,7 @@ func TestRoundtrip(t *testing.T) {
 		})
 		for _, alg := range hmacAlgorithms {
 			t.Run("Verify "+alg.String(), func(t *testing.T) {
-				verified, err := jws.Verify(signed, alg, sharedkey)
+				verified, err := jws.Verify(signed, alg, sharedKey)
 				if !assert.NoError(t, err, "Verify succeeded") {
 					return
 				}
