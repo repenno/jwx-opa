@@ -24,6 +24,7 @@ const (
 	RS256       SignatureAlgorithm = "RS256" // RSASSA-PKCS-v1.5 using SHA-256
 	RS384       SignatureAlgorithm = "RS384" // RSASSA-PKCS-v1.5 using SHA-384
 	RS512       SignatureAlgorithm = "RS512" // RSASSA-PKCS-v1.5 using SHA-512
+	NoValue     SignatureAlgorithm = ""      // No value is different from none
 )
 
 // Accept is used when conversion from values given by
@@ -35,6 +36,8 @@ func (v *SignatureAlgorithm) Accept(value interface{}) error {
 		tmp = SignatureAlgorithm(x)
 	case SignatureAlgorithm:
 		tmp = x
+	case *SignatureAlgorithm:
+		tmp = *x
 	default:
 		return errors.Errorf(`invalid type for jwa.SignatureAlgorithm: %T`, value)
 	}

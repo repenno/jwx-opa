@@ -86,7 +86,7 @@ func generateHeaders() error {
 		{
 			name:    `JWK`,
 			method:  `JWK`,
-			typ:     `*jwk.Set`,
+			typ:     `string`,
 			key:     `jwk`,
 			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.3`,
 			jsonTag: "`" + `json:"jwk,omitempty"` + "`",
@@ -134,7 +134,7 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n// This file is auto-generated. DO NOT EDIT")
 	fmt.Fprintf(&buf, "\npackage jws")
 	fmt.Fprintf(&buf, "\n\nimport (")
-	for _, pkg := range []string{"github.com/repenno/jwx-opa/jwa", "github.com/repenno/jwx-opa/jwk", "github.com/pkg/errors"} {
+	for _, pkg := range []string{"github.com/repenno/jwx-opa/jwa", "github.com/pkg/errors"} {
 		fmt.Fprintf(&buf, "\n%s", strconv.Quote(pkg))
 	}
 	fmt.Fprintf(&buf, "\n)")

@@ -16,10 +16,18 @@ func newRSAPublicKey(key *rsa.PublicKey) (*RSAPublicKey, error) {
 	}
 
 	var hdr StandardHeaders
-	hdr.Set(KeyTypeKey, jwa.RSA)
+	err := hdr.Set(KeyTypeKey, jwa.RSA)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to set Key Type")
+	}
+	// TODO
+	/*	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to set alg")
+		}*/
 	return &RSAPublicKey{
-		headers: &hdr,
-		key:     key,
+		StandardHeaders: &hdr,
+		key:             key,
 	}, nil
 }
 
@@ -33,10 +41,18 @@ func newRSAPrivateKey(key *rsa.PrivateKey) (*RSAPrivateKey, error) {
 	}
 
 	var hdr StandardHeaders
-	hdr.Set(KeyTypeKey, jwa.RSA)
+	err := hdr.Set(KeyTypeKey, jwa.RSA)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to set Key Type")
+	}
+	// TODO
+	/*	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to set alg")
+		}*/
 	return &RSAPrivateKey{
-		headers: &hdr,
-		key:     key,
+		StandardHeaders: &hdr,
+		key:             key,
 	}, nil
 }
 
@@ -70,7 +86,7 @@ func (k RSAPublicKey) MarshalJSON() (buf []byte, err error) {
 
 func (k RSAPublicKey) PopulateMap(m map[string]interface{}) (err error) {
 
-	if err := k.headers.PopulateMap(m); err != nil {
+	if err := k.StandardHeaders.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate header values`)
 	}
 
@@ -122,8 +138,8 @@ func (k *RSAPublicKey) ExtractMap(m map[string]interface{}) (err error) {
 	}
 
 	*k = RSAPublicKey{
-		headers: &hdrs,
-		key:     &rsa.PublicKey{E: int(e.Int64()), N: &n},
+		StandardHeaders: &hdrs,
+		key:             &rsa.PublicKey{E: int(e.Int64()), N: &n},
 	}
 	return nil
 }
@@ -149,7 +165,7 @@ func (k RSAPrivateKey) PopulateMap(m map[string]interface{}) (err error) {
 		qiKey = `qi`
 	)
 
-	if err := k.headers.PopulateMap(m); err != nil {
+	if err := k.StandardHeaders.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate header values`)
 	}
 
@@ -158,7 +174,7 @@ func (k RSAPrivateKey) PopulateMap(m map[string]interface{}) (err error) {
 		return errors.Wrap(err, `failed to populate public key values`)
 	}
 
-	if err := k.headers.PopulateMap(m); err != nil {
+	if err := k.StandardHeaders.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate header values`)
 	}
 	m[dKey] = base64.EncodeToString(k.key.D.Bytes())
@@ -279,8 +295,57 @@ func (k *RSAPrivateKey) ExtractMap(m map[string]interface{}) (err error) {
 	}
 
 	*k = RSAPrivateKey{
-		headers: pubkey.headers,
-		key:     &key,
+		StandardHeaders: pubkey.StandardHeaders,
+		key:             &key,
 	}
+	return nil
+}
+
+func (k *RSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
+
+	if keyJSON.N == nil || keyJSON.E == nil {
+		return errors.Errorf("Missing mandatory key parameters")
+	}
+	rsaPublicKey := &rsa.PublicKey{
+		N: (&big.Int{}).SetBytes(keyJSON.N.Bytes()),
+		E: int((&big.Int{}).SetBytes(keyJSON.E.Bytes()).Int64()),
+	}
+	k.key = rsaPublicKey
+	k.StandardHeaders = &keyJSON.StandardHeaders
+	return nil
+}
+
+func (k *RSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
+
+	rsaPublicKey := &RSAPublicKey{}
+	err := rsaPublicKey.GenerateKey(keyJSON)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate public key")
+	}
+
+	if keyJSON.D == nil || keyJSON.P == nil || keyJSON.Q == nil {
+		return errors.Errorf("Missing mandatory key parameters")
+	}
+	privateKey := &rsa.PrivateKey{
+		PublicKey: *rsaPublicKey.key,
+		D:         (&big.Int{}).SetBytes(keyJSON.D.Bytes()),
+		Primes: []*big.Int{
+			(&big.Int{}).SetBytes(keyJSON.P.Bytes()),
+			(&big.Int{}).SetBytes(keyJSON.Q.Bytes()),
+		},
+	}
+
+	if keyJSON.Dp.Len() > 0 {
+		privateKey.Precomputed.Dp = (&big.Int{}).SetBytes(keyJSON.Dp.Bytes())
+	}
+	if keyJSON.Dq.Len() > 0 {
+		privateKey.Precomputed.Dq = (&big.Int{}).SetBytes(keyJSON.Dq.Bytes())
+	}
+	if keyJSON.Qi.Len() > 0 {
+		privateKey.Precomputed.Qinv = (&big.Int{}).SetBytes(keyJSON.Qi.Bytes())
+	}
+
+	k.key = privateKey
+	k.StandardHeaders = &keyJSON.StandardHeaders
 	return nil
 }

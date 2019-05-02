@@ -11,12 +11,20 @@ func newSymmetricKey(key []byte) (*SymmetricKey, error) {
 	if len(key) == 0 {
 		return nil, errors.New(`non-empty []byte key required`)
 	}
-
 	var hdr StandardHeaders
-	hdr.Set(KeyTypeKey, jwa.OctetSeq)
+
+	err := hdr.Set(KeyTypeKey, jwa.OctetSeq)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to set Key Type")
+	}
+	// everything starts with 'none' signature
+	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to set alg")
+	}
 	return &SymmetricKey{
-		headers: &hdr,
-		key:     key,
+		StandardHeaders: &hdr,
+		key:             key,
 	}, nil
 }
 
@@ -47,8 +55,8 @@ func (s *SymmetricKey) ExtractMap(m map[string]interface{}) (err error) {
 	}
 
 	*s = SymmetricKey{
-		headers: &hdrs,
-		key:     kbuf,
+		StandardHeaders: &hdrs,
+		key:             kbuf,
 	}
 	return nil
 }
@@ -65,11 +73,20 @@ func (s SymmetricKey) MarshalJSON() (buf []byte, err error) {
 
 func (s SymmetricKey) PopulateMap(m map[string]interface{}) (err error) {
 
-	if err := s.headers.PopulateMap(m); err != nil {
+	if err := s.StandardHeaders.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate header values`)
 	}
 
 	const kKey = `k`
 	m[kKey] = base64.EncodeToString(s.key)
+	return nil
+}
+
+func (s *SymmetricKey) GenerateKey(keyJSON *RawKeyJSON) error {
+
+	*s = SymmetricKey{
+		StandardHeaders: &keyJSON.StandardHeaders,
+		key:             keyJSON.K,
+	}
 	return nil
 }

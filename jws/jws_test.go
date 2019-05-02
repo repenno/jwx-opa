@@ -238,12 +238,12 @@ func TestEncode(t *testing.T) {
 			[]byte{'.'},
 		)
 
-		sign, err := sign.New(jwa.HS256)
+		signer, err := sign.New(jwa.HS256)
 		if !assert.NoError(t, err, "HMAC signer created successfully") {
 			return
 		}
 
-		signature, err := sign.Sign(signingInput, hmacKeyDecoded.Bytes())
+		signature, err := signer.Sign(signingInput, hmacKeyDecoded.Bytes())
 		if !assert.NoError(t, err, "PayloadSign is successful") {
 			return
 		}
@@ -458,7 +458,7 @@ func TestEncode(t *testing.T) {
 			return
 		}
 
-		sign, err := sign.New(jwa.RS256)
+		signer, err := sign.New(jwa.RS256)
 		if !assert.NoError(t, err, "RsaSign created successfully") {
 			return
 		}
@@ -479,7 +479,7 @@ func TestEncode(t *testing.T) {
 			},
 			[]byte{'.'},
 		)
-		signature, err := sign.Sign(signingInput, privkey)
+		signature, err := signer.Sign(signingInput, privkey)
 		if !assert.NoError(t, err, "PayloadSign is successful") {
 			return
 		}
@@ -609,23 +609,24 @@ func TestEncode(t *testing.T) {
 		s := `eyJhbGciOiJub25lIn0.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.`
 
 		m, err := jws.Parse(strings.NewReader(s))
-		if !assert.NoError(t, err, "Parsing compact serialization") {
-			return
+		if err != nil {
+			t.Fatalf("Failed compact serialization parsing: %s", err.Error())
 		}
 
 		{
 			v := map[string]interface{}{}
-			if !assert.NoError(t, json.Unmarshal(m.Payload(), &v), "Unmarshal payload") {
-				return
+			err := json.Unmarshal(m.Payload(), &v)
+			if err != nil {
+				t.Fatalf("Failed to parse payload: %s", err.Error())
 			}
-			if !assert.Equal(t, v["iss"], "joe", "iss matches") {
-				return
+			if v["iss"] != "joe" {
+				t.Fatalf("Mismatched iss (%s):(%s)", v["iss"], "joe")
 			}
-			if !assert.Equal(t, int(v["exp"].(float64)), 1300819380, "exp matches") {
-				return
+			if v["exp"].(float64) != 1300819380 {
+				t.Fatalf("Mismatched exp (%f):(%d)", v["exp"].(float64), 1300819380)
 			}
-			if !assert.Equal(t, v["http://example.com/is_root"], true, "'http://example.com/is_root' matches") {
-				return
+			if v["http://example.com/is_root"] != true {
+				t.Fatalf("Mismatched exp (%t):(%t)", v["http://example.com/is_root"], true)
 			}
 		}
 
@@ -814,7 +815,6 @@ func TestPublicHeaders(t *testing.T) {
 
 func TestDecode_ES384Compact_NoSigTrim(t *testing.T) {
 	incoming := "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCIsImtpZCI6IjE5MzFmZTQ0YmFhMWNhZTkyZWUzNzYzOTQ0MDU1OGMwODdlMTRlNjk5ZWU5NjVhM2Q1OGU1MmU2NGY4MDE0NWIifQ.eyJpc3MiOiJicmt0LWNsaS0xLjAuN3ByZTEiLCJpYXQiOjE0ODQ2OTU1MjAsImp0aSI6IjgxYjczY2Y3In0.DdFi0KmPHSv4PfIMGcWGMSRLmZsfRPQ3muLFW6Ly2HpiLFFQWZ0VEanyrFV263wjlp3udfedgw_vrBLz3XC8CkbvCo_xeHMzaTr_yfhjoheSj8gWRLwB-22rOnUX_M0A"
-	t.Logf("incoming = '%s'", incoming)
 	const jwksrc = `{
     "kty":"EC",
     "crv":"P-384",

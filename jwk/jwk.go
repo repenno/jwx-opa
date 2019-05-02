@@ -1,4 +1,6 @@
-//go:generate go run internal/cmd/genheader/main.go
+/*
+go:generate go run internal/cmd/genheader/main.go
+*/
 
 // Package jwk implements JWK as described in https://tools.ietf.org/html/rfc7517
 package jwk
@@ -16,7 +18,7 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 )
 
-// GetPublicKey returns the public key based on te private key type.
+// GetPublicKey returns the public key based on the private key type.
 // For rsa key types *rsa.PublicKey is returned; for ecdsa key types *ecdsa.PublicKey;
 // for byte slice (raw) keys, the key itself is returned. If the corresponding
 // public key cannot be deduced, an error is returned
@@ -113,7 +115,7 @@ func ParseString(s string) (*Set, error) {
 func (s Set) LookupKeyID(kid string) []Key {
 	var keys []Key
 	for _, key := range s.Keys {
-		if key.KeyID() == kid {
+		if key.GetKeyID() == kid {
 			keys = append(keys, key)
 		}
 	}
@@ -209,4 +211,33 @@ func getKey(m map[string]interface{}, key string, required bool) ([]byte, error)
 		return nil, errors.Wrapf(err, `failed to base64 decode key %s`, key)
 	}
 	return buf, nil
+}
+
+func (r *RawKeyJSON) GenerateKey() (Key, error) {
+
+	var key Key
+
+	switch r.KeyType {
+	case jwa.RSA:
+		if r.D != nil {
+			key = &RSAPrivateKey{}
+		} else {
+			key = &RSAPublicKey{}
+		}
+	case jwa.EC:
+		if r.D != nil {
+			key = &ECDSAPrivateKey{}
+		} else {
+			key = &ECDSAPublicKey{}
+		}
+	case jwa.OctetSeq:
+		key = &SymmetricKey{}
+	default:
+		return nil, errors.Errorf(`Unrecognized key type`)
+	}
+	err := key.GenerateKey(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to generate key from JWK")
+	}
+	return key, nil
 }

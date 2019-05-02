@@ -202,6 +202,8 @@ func (t typ) Generate() error {
 	fmt.Fprintf(&buf, "\ntmp = %s(x)", t.name)
 	fmt.Fprintf(&buf, "\ncase %s:", t.name)
 	fmt.Fprintf(&buf, "\ntmp = x")
+	fmt.Fprintf(&buf, "\ncase *%s:", t.name)
+	fmt.Fprintf(&buf, "\ntmp = *x")
 	fmt.Fprintf(&buf, "\ndefault:")
 	fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid type for jwa.%s: %%T`, value)", t.name)
 	fmt.Fprintf(&buf, "\n}")

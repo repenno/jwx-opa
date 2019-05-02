@@ -64,19 +64,19 @@ func TestHeader(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Setting %s value failed", "default")
 		}
-		if h.Algorithm() != "" {
+		if h.GetAlgorithm() != jwa.NoValue {
 			t.Fatalf("Algorithm should be empty string")
 		}
-		if h.KeyID() != "" {
+		if h.GetKeyID() != "" {
 			t.Fatalf("KeyID should be empty string")
 		}
-		if h.KeyType() != "" {
+		if h.GetKeyType() != "" {
 			t.Fatalf("KeyType should be empty string")
 		}
-		if h.KeyUsage() != "" {
+		if h.GetKeyUsage() != "" {
 			t.Fatalf("KeyUsage should be empty string")
 		}
-		if h.KeyOps() != nil {
+		if h.GetKeyOps() != nil {
 			t.Fatalf("KeyOps should be empty string")
 		}
 	})
@@ -108,17 +108,18 @@ func TestHeader(t *testing.T) {
 	t.Run("Algorithm", func(t *testing.T) {
 		var h jwk.StandardHeaders
 		for _, value := range []interface{}{jwa.RS256, jwa.ES256} {
-			if !assert.NoError(t, h.Set("alg", value), "Set for alg should succeed") {
-				return
+			err := h.Set("alg", value)
+			if err != nil {
+				t.Fatalf("Failed to set algorithm value: %s", err.Error())
 			}
-
 			got, ok := h.Get("alg")
-			if !assert.True(t, ok, "Get for alg should succeed") {
-				return
+			if !ok {
+				t.Fatal("Failed to get algorithm")
 			}
-
-			if !assert.Equal(t, value.(fmt.Stringer).String(), got, "values match") {
-				return
+			vTypes := fmt.Sprintf("%T, %T", value, got)
+			fmt.Println(vTypes)
+			if value != got {
+				t.Fatalf("Algorithm values do not match %s:%s", value, got)
 			}
 		}
 	})

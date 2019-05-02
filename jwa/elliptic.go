@@ -25,6 +25,8 @@ func (v *EllipticCurveAlgorithm) Accept(value interface{}) error {
 		tmp = EllipticCurveAlgorithm(x)
 	case EllipticCurveAlgorithm:
 		tmp = x
+	case *EllipticCurveAlgorithm:
+		tmp = *x
 	default:
 		return errors.Errorf(`invalid type for jwa.EllipticCurveAlgorithm: %T`, value)
 	}

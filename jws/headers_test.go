@@ -3,27 +3,25 @@ package jws_test
 import (
 	"encoding/json"
 	"github.com/repenno/jwx-opa/jwa"
-	"github.com/repenno/jwx-opa/jwk"
 	"github.com/repenno/jwx-opa/jws"
 	"reflect"
 	"testing"
 )
 
 func TestHeader(t *testing.T) {
-	publicKey := `{"kty":"RSA",
-	             "n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw",
-	             "e":"AQAB",
-	             "alg":"RS256",
-	             "kid":"2011-04-29"}`
-	jwkPublicKeySet, err := jwk.ParseString(publicKey)
-	if err != nil {
-		t.Fatal("Failed to parse RSA public key")
-	}
+	jwkSrc := `{
+  "kty": "RSA",
+  "n": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw",
+  "e": "AQAB",
+  "alg": "RS256",
+  "kid": "2011-04-29"
+}`
+
 	values := map[string]interface{}{
 		jws.AlgorithmKey:   jwa.ES256,
 		jws.ContentTypeKey: "example",
 		jws.CriticalKey:    []string{"exp"},
-		jws.JWKKey:         jwkPublicKeySet,
+		jws.JWKKey:         jwkSrc,
 		jws.JWKSetURLKey:   "https://www.jwk.com/key.json",
 		jws.TypeKey:        "JWT",
 		jws.KeyIDKey:       "e9bc097a-ce51-4036-9562-d2ade882db0d",

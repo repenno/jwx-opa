@@ -3,18 +3,17 @@
 package jwk
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/jwa"
 )
 
 const (
-	AlgorithmKey = "alg"
-	KeyIDKey     = "kid"
-	KeyTypeKey   = "kty"
-	KeyUsageKey  = "use"
-	KeyOpsKey    = "key_ops"
+	AlgorithmKey     = "alg"
+	KeyIDKey         = "kid"
+	KeyOpsKey        = "key_ops"
+	KeyTypeKey       = "kty"
+	KeyUsageKey      = "use"
+	PrivateParamsKey = "privateParams"
 )
 
 type Headers interface {
@@ -24,92 +23,95 @@ type Headers interface {
 	PopulateMap(map[string]interface{}) error
 	ExtractMap(map[string]interface{}) error
 	Walk(func(string, interface{}) error) error
-	Algorithm() string
-	KeyID() string
-	KeyType() jwa.KeyType
-	KeyUsage() string
-	KeyOps() KeyOperationList
+	GetAlgorithm() jwa.SignatureAlgorithm
+	GetKeyID() string
+	GetKeyOps() KeyOperationList
+	GetKeyType() jwa.KeyType
+	GetKeyUsage() string
+	GetPrivateParams() map[string]interface{}
 }
 
 type StandardHeaders struct {
-	algorithm     *string          // https://tools.ietf.org/html/rfc7517#section-4.4
-	keyID         *string          // https://tools.ietf.org/html/rfc7515#section-4.1.4
-	keyType       *jwa.KeyType     // https://tools.ietf.org/html/rfc7517#section-4.1
-	keyUsage      *string          // https://tools.ietf.org/html/rfc7517#section-4.2
-	keyops        KeyOperationList // https://tools.ietf.org/html/rfc7517#section-4.3
-	privateParams map[string]interface{}
+	Algorithm     *jwa.SignatureAlgorithm `json:"alg,omitempty"`           // https://tools.ietf.org/html/rfc7517#section-4.4
+	KeyID         string                  `json:"kid,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.4
+	KeyOps        KeyOperationList        `json:"key_ops,omitempty"`       // https://tools.ietf.org/html/rfc7517#section-4.3
+	KeyType       jwa.KeyType             `json:"kty,omitempty"`           // https://tools.ietf.org/html/rfc7517#section-4.1
+	KeyUsage      string                  `json:"use,omitempty"`           // https://tools.ietf.org/html/rfc7517#section-4.2
+	PrivateParams map[string]interface{}  `json:"privateParams,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.4
 }
 
 func (h *StandardHeaders) Remove(s string) {
-	delete(h.privateParams, s)
+	delete(h.PrivateParams, s)
 }
 
-func (h *StandardHeaders) Algorithm() string {
-	if v := h.algorithm; v != nil {
+func (h *StandardHeaders) GetAlgorithm() jwa.SignatureAlgorithm {
+	if v := h.Algorithm; v != nil {
 		return *v
 	}
-	return ""
+	return jwa.NoValue
 }
 
-func (h *StandardHeaders) KeyID() string {
-	if v := h.keyID; v != nil {
-		return *v
-	}
-	return ""
+func (h *StandardHeaders) GetKeyID() string {
+	return h.KeyID
 }
 
-func (h *StandardHeaders) KeyType() jwa.KeyType {
-	if v := h.keyType; v != nil {
-		return *v
-	}
-	return jwa.InvalidKeyType
+func (h *StandardHeaders) GetKeyOps() KeyOperationList {
+	return h.KeyOps
 }
 
-func (h *StandardHeaders) KeyUsage() string {
-	if v := h.keyUsage; v != nil {
-		return *v
-	}
-	return ""
+func (h *StandardHeaders) GetKeyType() jwa.KeyType {
+	return h.KeyType
 }
 
-func (h *StandardHeaders) KeyOps() KeyOperationList {
-	return h.keyops
+func (h *StandardHeaders) GetKeyUsage() string {
+	return h.KeyUsage
+}
+
+func (h *StandardHeaders) GetPrivateParams() map[string]interface{} {
+	return h.PrivateParams
 }
 
 func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	switch name {
 	case AlgorithmKey:
-		v := h.algorithm
-		if v == nil {
+		alg := h.GetAlgorithm()
+		if alg != jwa.NoValue {
+			return alg, true
+		} else {
 			return nil, false
 		}
-		return *v, true
 	case KeyIDKey:
-		v := h.keyID
-		if v == nil {
+		v := h.KeyID
+		if v == "" {
 			return nil, false
 		}
-		return *v, true
-	case KeyTypeKey:
-		v := h.keyType
-		if v == nil {
-			return nil, false
-		}
-		return *v, true
-	case KeyUsageKey:
-		v := h.keyUsage
-		if v == nil {
-			return nil, false
-		}
-		return *v, true
+		return v, true
 	case KeyOpsKey:
-		v := h.keyops
+		v := h.KeyOps
+		if v == nil {
+			return nil, false
+		}
+		return v, true
+	case KeyTypeKey:
+		v := h.KeyType
+		if v == jwa.InvalidKeyType {
+			return nil, false
+		}
+		return v, true
+	case KeyUsageKey:
+		v := h.KeyUsage
+		if v == "" {
+			return nil, false
+		}
+		return v, true
+	case PrivateParamsKey:
+		v := h.PrivateParams
 		if v == nil {
 			return nil, false
 		}
 		return v, true
 	default:
-		v, ok := h.privateParams[name]
+		v, ok := h.PrivateParams[name]
 		return v, ok
 	}
 }
@@ -117,45 +119,45 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 func (h *StandardHeaders) Set(name string, value interface{}) error {
 	switch name {
 	case AlgorithmKey:
-		switch v := value.(type) {
-		case string:
-			h.algorithm = &v
-			return nil
-		case fmt.Stringer:
-			s := v.String()
-			h.algorithm = &s
-			return nil
+		var acceptor jwa.SignatureAlgorithm
+		if err := acceptor.Accept(value); err != nil {
+			return errors.Wrapf(err, `invalid value for %s key`, AlgorithmKey)
 		}
-		return errors.Errorf(`invalid value for %s key: %T`, AlgorithmKey, value)
+		h.Algorithm = &acceptor
+		return nil
 	case KeyIDKey:
 		if v, ok := value.(string); ok {
-			h.keyID = &v
+			h.KeyID = v
 			return nil
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, KeyIDKey, value)
-	case KeyTypeKey:
-		var acceptor jwa.KeyType
-		if err := acceptor.Accept(value); err != nil {
-			return errors.Wrapf(err, `invalid value for %s key`, KeyTypeKey)
-		}
-		h.keyType = &acceptor
-		return nil
-	case KeyUsageKey:
-		if v, ok := value.(string); ok {
-			h.keyUsage = &v
-			return nil
-		}
-		return errors.Errorf(`invalid value for %s key: %T`, KeyUsageKey, value)
 	case KeyOpsKey:
-		if err := h.keyops.Accept(value); err != nil {
+		if err := h.KeyOps.Accept(value); err != nil {
 			return errors.Wrapf(err, `invalid value for %s key`, KeyOpsKey)
 		}
 		return nil
-	default:
-		if h.privateParams == nil {
-			h.privateParams = map[string]interface{}{}
+	case KeyTypeKey:
+		if err := h.KeyType.Accept(value); err != nil {
+			return errors.Wrapf(err, `invalid value for %s key`, KeyTypeKey)
 		}
-		h.privateParams[name] = value
+		return nil
+	case KeyUsageKey:
+		if v, ok := value.(string); ok {
+			h.KeyUsage = v
+			return nil
+		}
+		return errors.Errorf(`invalid value for %s key: %T`, KeyUsageKey, value)
+	case PrivateParamsKey:
+		if v, ok := value.(map[string]interface{}); ok {
+			h.PrivateParams = v
+			return nil
+		}
+		return errors.Errorf(`invalid value for %s key: %T`, PrivateParamsKey, value)
+	default:
+		if h.PrivateParams == nil {
+			h.PrivateParams = map[string]interface{}{}
+		}
+		h.PrivateParams[name] = value
 	}
 	return nil
 }
@@ -165,7 +167,7 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 // represented as flat objects instead of differentiating the different
 // parts of the message in separate sub objects.
 func (h StandardHeaders) PopulateMap(m map[string]interface{}) error {
-	for k, v := range h.privateParams {
+	for k, v := range h.PrivateParams {
 		m[k] = v
 	}
 	if v, ok := h.Get(AlgorithmKey); ok {
@@ -174,14 +176,17 @@ func (h StandardHeaders) PopulateMap(m map[string]interface{}) error {
 	if v, ok := h.Get(KeyIDKey); ok {
 		m[KeyIDKey] = v
 	}
+	if v, ok := h.Get(KeyOpsKey); ok {
+		m[KeyOpsKey] = v
+	}
 	if v, ok := h.Get(KeyTypeKey); ok {
 		m[KeyTypeKey] = v
 	}
 	if v, ok := h.Get(KeyUsageKey); ok {
 		m[KeyUsageKey] = v
 	}
-	if v, ok := h.Get(KeyOpsKey); ok {
-		m[KeyOpsKey] = v
+	if v, ok := h.Get(PrivateParamsKey); ok {
+		m[PrivateParamsKey] = v
 	}
 
 	return nil
@@ -204,6 +209,12 @@ func (h *StandardHeaders) ExtractMap(m map[string]interface{}) (err error) {
 		}
 		delete(m, KeyIDKey)
 	}
+	if v, ok := m[KeyOpsKey]; ok {
+		if err := h.Set(KeyOpsKey, v); err != nil {
+			return errors.Wrapf(err, `failed to set value for key %s`, KeyOpsKey)
+		}
+		delete(m, KeyOpsKey)
+	}
 	if v, ok := m[KeyTypeKey]; ok {
 		if err := h.Set(KeyTypeKey, v); err != nil {
 			return errors.Wrapf(err, `failed to set value for key %s`, KeyTypeKey)
@@ -216,22 +227,22 @@ func (h *StandardHeaders) ExtractMap(m map[string]interface{}) (err error) {
 		}
 		delete(m, KeyUsageKey)
 	}
-	if v, ok := m[KeyOpsKey]; ok {
-		if err := h.Set(KeyOpsKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, KeyOpsKey)
+	if v, ok := m[PrivateParamsKey]; ok {
+		if err := h.Set(PrivateParamsKey, v); err != nil {
+			return errors.Wrapf(err, `failed to set value for key %s`, PrivateParamsKey)
 		}
-		delete(m, KeyOpsKey)
+		delete(m, PrivateParamsKey)
 	}
 	// Fix: A nil map is different from a empty map as far as deep.equal is concerned
 	if len(m) > 0 {
-		h.privateParams = m
+		h.PrivateParams = m
 	}
 
 	return nil
 }
 
 func (h StandardHeaders) Walk(f func(string, interface{}) error) error {
-	for _, key := range []string{AlgorithmKey, KeyIDKey, KeyTypeKey, KeyUsageKey, KeyOpsKey} {
+	for _, key := range []string{AlgorithmKey, KeyIDKey, KeyOpsKey, KeyTypeKey, KeyUsageKey, PrivateParamsKey} {
 		if v, ok := h.Get(key); ok {
 			if err := f(key, v); err != nil {
 				return errors.Wrapf(err, `walk function returned error for %s`, key)
@@ -239,7 +250,7 @@ func (h StandardHeaders) Walk(f func(string, interface{}) error) error {
 		}
 	}
 
-	for k, v := range h.privateParams {
+	for k, v := range h.PrivateParams {
 		if err := f(k, v); err != nil {
 			return errors.Wrapf(err, `walk function returned error for %s`, k)
 		}

@@ -1,4 +1,7 @@
-//go:generate go run internal/cmd/gentoken/main.go
+/*
+
+go:generate go run internal/cmd/gentoken/main.go
+*/
 
 // Package jwt implements JSON Web Tokens as described in https://tools.ietf.org/html/rfc7519
 package jwt

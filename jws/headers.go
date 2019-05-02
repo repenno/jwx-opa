@@ -4,7 +4,6 @@ package jws
 import (
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/jwa"
-	"github.com/repenno/jwx-opa/jwk"
 )
 
 const (
@@ -28,7 +27,7 @@ type StandardHeaders struct {
 	Algorithm     jwa.SignatureAlgorithm `json:"alg,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.1
 	ContentType   string                 `json:"cty,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.10
 	Critical      []string               `json:"crit,omitempty"`          // https://tools.ietf.org/html/rfc7515#section-4.1.11
-	JWK           *jwk.Set               `json:"jwk,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.3
+	JWK           string                 `json:"jwk,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.3
 	JWKSetURL     string                 `json:"jku,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.2
 	KeyID         string                 `json:"kid,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.4
 	PrivateParams map[string]interface{} `json:"privateParams,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.9
@@ -61,7 +60,7 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 		return v, true
 	case JWKKey:
 		v := h.JWK
-		if v == nil {
+		if v == "" {
 			return nil, false
 		}
 		return v, true
@@ -115,7 +114,7 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, CriticalKey, value)
 	case JWKKey:
-		if v, ok := value.(*jwk.Set); ok {
+		if v, ok := value.(string); ok {
 			h.JWK = v
 			return nil
 		}

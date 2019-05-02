@@ -17,10 +17,18 @@ func newECDSAPublicKey(key *ecdsa.PublicKey) (*ECDSAPublicKey, error) {
 	}
 
 	var hdr StandardHeaders
-	hdr.Set(KeyTypeKey, jwa.EC)
+	err := hdr.Set(KeyTypeKey, jwa.EC)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to set Key Type")
+	}
+	// everything starts with 'none' signature
+	/*	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to set alg")
+		}*/
 	return &ECDSAPublicKey{
-		headers: &hdr,
-		key:     key,
+		StandardHeaders: &hdr,
+		key:             key,
 	}, nil
 }
 
@@ -30,10 +38,18 @@ func newECDSAPrivateKey(key *ecdsa.PrivateKey) (*ECDSAPrivateKey, error) {
 	}
 
 	var hdr StandardHeaders
-	hdr.Set(KeyTypeKey, jwa.EC)
+	err := hdr.Set(KeyTypeKey, jwa.EC)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to set Key Type")
+	}
+	// TODO
+	/*	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to set alg")
+		}*/
 	return &ECDSAPrivateKey{
-		headers: &hdr,
-		key:     key,
+		StandardHeaders: &hdr,
+		key:             key,
 	}, nil
 }
 
@@ -71,7 +87,7 @@ func (k ECDSAPublicKey) MarshalJSON() (buf []byte, err error) {
 
 func (k ECDSAPublicKey) PopulateMap(m map[string]interface{}) (err error) {
 
-	if err := k.headers.PopulateMap(m); err != nil {
+	if err := k.StandardHeaders.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate header values`)
 	}
 
@@ -83,7 +99,6 @@ func (k ECDSAPublicKey) PopulateMap(m map[string]interface{}) (err error) {
 	m[xKey] = base64.EncodeToString(k.key.X.Bytes())
 	m[yKey] = base64.EncodeToString(k.key.Y.Bytes())
 	m[crvKey] = k.key.Curve.Params().Name
-
 	return nil
 }
 
@@ -99,16 +114,16 @@ func (k ECDSAPrivateKey) MarshalJSON() (buf []byte, err error) {
 
 func (k ECDSAPrivateKey) PopulateMap(m map[string]interface{}) (err error) {
 
-	if err := k.headers.PopulateMap(m); err != nil {
+	if err := k.StandardHeaders.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate header values`)
 	}
 
-	pubkey, err := newECDSAPublicKey(&k.key.PublicKey)
+	pubKey, err := newECDSAPublicKey(&k.key.PublicKey)
 	if err != nil {
 		return errors.Wrap(err, `failed to construct public key from private key`)
 	}
 
-	if err := pubkey.PopulateMap(m); err != nil {
+	if err := pubKey.PopulateMap(m); err != nil {
 		return errors.Wrap(err, `failed to populate public key values`)
 	}
 
@@ -183,7 +198,7 @@ func (k *ECDSAPublicKey) ExtractMap(m map[string]interface{}) (err error) {
 	}
 
 	*k = ECDSAPublicKey{
-		headers: &hdrs,
+		StandardHeaders: &hdrs,
 		key: &ecdsa.PublicKey{
 			Curve: curve,
 			X:     &x,
@@ -227,12 +242,68 @@ func (k *ECDSAPrivateKey) ExtractMap(m map[string]interface{}) (err error) {
 	d.SetBytes(dbuf)
 
 	*k = ECDSAPrivateKey{
-		headers: pubkey.headers,
+		StandardHeaders: pubkey.StandardHeaders,
 		key: &ecdsa.PrivateKey{
 			PublicKey: *(pubkey.key),
 			D:         &d,
 		},
 	}
-	pubkey.headers = nil
+	pubkey.StandardHeaders = nil
+	return nil
+}
+
+func (k *ECDSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
+
+	var x, y big.Int
+
+	if keyJSON.X == nil || keyJSON.Y == nil || keyJSON.Crv == "" {
+		return errors.Errorf("Missing parameters to generate key")
+	}
+
+	x.SetBytes(keyJSON.X.Bytes())
+	y.SetBytes(keyJSON.Y.Bytes())
+
+	var curve elliptic.Curve
+	switch keyJSON.Crv {
+	case jwa.P256:
+		curve = elliptic.P256()
+	case jwa.P384:
+		curve = elliptic.P384()
+	case jwa.P521:
+		curve = elliptic.P521()
+	default:
+		return errors.Errorf(`invalid curve name %s`, keyJSON.Crv)
+	}
+
+	*k = ECDSAPublicKey{
+		StandardHeaders: &keyJSON.StandardHeaders,
+		key: &ecdsa.PublicKey{
+			Curve: curve,
+			X:     &x,
+			Y:     &y,
+		},
+	}
+	return nil
+}
+
+func (k *ECDSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
+
+	if keyJSON.D == nil {
+		return errors.Errorf(`Missing key parameter`)
+	}
+	eCDSAPublicKey := &ECDSAPublicKey{}
+	err := eCDSAPublicKey.GenerateKey(keyJSON)
+	if err != nil {
+		return errors.Wrap(err, `failed to generate public key`)
+	}
+
+	privateKey := &ecdsa.PrivateKey{
+		PublicKey: *eCDSAPublicKey.key,
+		D:         (&big.Int{}).SetBytes(keyJSON.D.Bytes()),
+	}
+
+	k.key = privateKey
+	k.StandardHeaders = &keyJSON.StandardHeaders
+
 	return nil
 }

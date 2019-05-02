@@ -26,6 +26,8 @@ func (v *KeyType) Accept(value interface{}) error {
 		tmp = KeyType(x)
 	case KeyType:
 		tmp = x
+	case *KeyType:
+		tmp = *x
 	default:
 		return errors.Errorf(`invalid type for jwa.KeyType: %T`, value)
 	}

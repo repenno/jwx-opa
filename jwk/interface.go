@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"errors"
+	"github.com/repenno/jwx-opa/jwa"
 )
 
 // KeyUsageType is used to denote what this key should be used for
@@ -58,38 +59,48 @@ type Key interface {
 	// EC types would create *ecdsa.PublicKey or *ecdsa.PrivateKey,
 	// and OctetSeq types create a []byte key.
 	Materialize() (interface{}, error)
+	GenerateKey(*RawKeyJSON) error
 }
 
-type headers interface {
-	Headers
+type RawKeyJSON struct {
+	StandardHeaders
+	jwa.AlgorithmParameters
 }
+
+type RawKeySetJSON struct {
+	Keys []RawKeyJSON `json:"keys"`
+}
+
+/*type headers interface {
+	Headers
+}*/
 
 // RSAPublicKey is a type of JWK generated from RSA public keys
 type RSAPublicKey struct {
-	headers
+	*StandardHeaders
 	key *rsa.PublicKey
 }
 
 // RSAPrivateKey is a type of JWK generated from RSA private keys
 type RSAPrivateKey struct {
-	headers
+	*StandardHeaders
 	key *rsa.PrivateKey
 }
 
 // SymmetricKey is a type of JWK generated from symmetric keys
 type SymmetricKey struct {
-	headers
+	*StandardHeaders
 	key []byte
 }
 
 // ECDSAPublicKey is a type of JWK generated from ECDSA public keys
 type ECDSAPublicKey struct {
-	headers
+	*StandardHeaders
 	key *ecdsa.PublicKey
 }
 
 // ECDSAPrivateKey is a type of JWK generated from ECDH-ES private keys
 type ECDSAPrivateKey struct {
-	headers
+	*StandardHeaders
 	key *ecdsa.PrivateKey
 }

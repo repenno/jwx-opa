@@ -35,6 +35,7 @@ type headerField struct {
 	hasGet     bool
 	noDeref    bool
 	isList     bool
+	jsonTag    string
 }
 
 func (f headerField) IsList() bool {
@@ -50,8 +51,9 @@ func (f headerField) PointerElem() string {
 }
 
 var zerovals = map[string]string{
-	"string":      `""`,
-	"jwa.KeyType": "jwa.InvalidKeyType",
+	"string":                  `""`,
+	"jwa.KeyType":             "jwa.InvalidKeyType",
+	"*jwa.SignatureAlgorithm": "nil",
 }
 
 func zeroval(s string) string {
@@ -64,41 +66,56 @@ func zeroval(s string) string {
 func generateHeaders() error {
 	fields := []headerField{
 		{
-			name:      `keyType`,
-			method:    `KeyType`,
-			typ:       `*jwa.KeyType`,
+			name:      `KeyType`,
+			method:    `GetKeyType`,
+			typ:       `jwa.KeyType`,
 			key:       `kty`,
 			comment:   `https://tools.ietf.org/html/rfc7517#section-4.1`,
 			hasAccept: true,
+			jsonTag:   "`" + `json:"kty,omitempty"` + "`",
 		},
 		{
-			name:    `keyUsage`,
-			method:  `KeyUsage`,
+			name:    `KeyUsage`,
+			method:  `GetKeyUsage`,
 			key:     `use`,
-			typ:     `*string`,
+			typ:     `string`,
 			comment: `https://tools.ietf.org/html/rfc7517#section-4.2`,
+			jsonTag: "`" + `json:"use,omitempty"` + "`",
 		},
 		{
-			name:      `keyops`,
-			method:    `KeyOps`,
+			name:      `KeyOps`,
+			method:    `GetKeyOps`,
 			typ:       `KeyOperationList`,
 			key:       `key_ops`,
 			comment:   `https://tools.ietf.org/html/rfc7517#section-4.3`,
 			hasAccept: true,
+			jsonTag:   "`" + `json:"key_ops,omitempty"` + "`",
 		},
 		{
-			name:    `algorithm`,
-			method:  `Algorithm`,
-			typ:     `*string`,
-			key:     `alg`,
-			comment: `https://tools.ietf.org/html/rfc7517#section-4.4`,
+			name:      `Algorithm`,
+			method:    `GetAlgorithm`,
+			typ:       `*jwa.SignatureAlgorithm`,
+			key:       `alg`,
+			comment:   `https://tools.ietf.org/html/rfc7517#section-4.4`,
+			jsonTag:   "`" + `json:"alg,omitempty"` + "`",
+			noDeref:   true,
+			hasAccept: true,
 		},
 		{
-			name:    `keyID`,
-			method:  `KeyID`,
-			typ:     `*string`,
+			name:    `KeyID`,
+			method:  `GetKeyID`,
+			typ:     `string`,
 			key:     `kid`,
 			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.4`,
+			jsonTag: "`" + `json:"kid,omitempty"` + "`",
+		},
+		{
+			name:    `PrivateParams`,
+			method:  `GetPrivateParams`,
+			typ:     `map[string]interface{}`,
+			key:     `privateParams`,
+			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.4`,
+			jsonTag: "`" + `json:"privateParams,omitempty"` + "`",
 		},
 	}
 
@@ -111,7 +128,7 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n// This file is auto-generated. DO NOT EDIT")
 	fmt.Fprintf(&buf, "\n\npackage jwk")
 	fmt.Fprintf(&buf, "\n\nimport (")
-	for _, pkg := range []string{"fmt"} {
+	for _, pkg := range []string{} {
 		fmt.Fprintf(&buf, "\n%s", strconv.Quote(pkg))
 	}
 	fmt.Fprintf(&buf, "\n\n")
@@ -122,7 +139,7 @@ func generateHeaders() error {
 
 	fmt.Fprintf(&buf, "\n\nconst (")
 	for _, f := range fields {
-		fmt.Fprintf(&buf, "\n%sKey = %s", f.method, strconv.Quote(f.key))
+		fmt.Fprintf(&buf, "\n%sKey = %s", f.name, strconv.Quote(f.key))
 	}
 	fmt.Fprintf(&buf, "\n)") // end const
 
@@ -146,13 +163,12 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n}") // end type Headers interface
 	fmt.Fprintf(&buf, "\n\ntype StandardHeaders struct {")
 	for _, f := range fields {
-		fmt.Fprintf(&buf, "\n%s %s // %s", f.name, f.typ, f.comment)
+		fmt.Fprintf(&buf, "\n%s %s %s // %s", f.name, f.typ, f.jsonTag, f.comment)
 	}
-	fmt.Fprintf(&buf, "\nprivateParams map[string]interface{}")
 	fmt.Fprintf(&buf, "\n}") // end type StandardHeaders
 
 	fmt.Fprintf(&buf, "\n\nfunc (h *StandardHeaders) Remove(s string) {")
-	fmt.Fprintf(&buf, "\ndelete(h.privateParams, s)")
+	fmt.Fprintf(&buf, "\ndelete(h.PrivateParams, s)")
 	fmt.Fprintf(&buf, "\n}") // func Remove(s string)
 
 	for _, f := range fields {
@@ -175,6 +191,7 @@ func generateHeaders() error {
 			if f.IsPointer() && !f.noDeref {
 				fmt.Fprintf(&buf, "\nreturn *v")
 			} else {
+				// fmt.Fprintf(&buf, "\nif v := h.%s; *v != %s {", f.name, zeroval(f.typ))
 				fmt.Fprintf(&buf, "\nreturn v")
 			}
 			fmt.Fprintf(&buf, "\n}") // if h.%s != %s
@@ -186,10 +203,12 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n\nfunc (h *StandardHeaders) Get(name string) (interface{}, bool) {")
 	fmt.Fprintf(&buf, "\nswitch name {")
 	for _, f := range fields {
-		fmt.Fprintf(&buf, "\ncase %sKey:", f.method)
+		fmt.Fprintf(&buf, "\ncase %sKey:", f.name)
 		fmt.Fprintf(&buf, "\nv := h.%s", f.name)
 		if f.IsList() {
 			fmt.Fprintf(&buf, "\nif len(v) == 0 {")
+		} else if f.IsPointer() && !f.noDeref {
+			fmt.Fprintf(&buf, "\nif *v == %s {", zeroval(f.typ))
 		} else {
 			fmt.Fprintf(&buf, "\nif v == %s {", zeroval(f.typ))
 		}
@@ -204,7 +223,7 @@ func generateHeaders() error {
 		}
 	}
 	fmt.Fprintf(&buf, "\ndefault:")
-	fmt.Fprintf(&buf, "\nv, ok := h.privateParams[name]")
+	fmt.Fprintf(&buf, "\nv, ok := h.PrivateParams[name]")
 	fmt.Fprintf(&buf, "\nreturn v, ok")
 	fmt.Fprintf(&buf, "\n}") // end switch name
 	fmt.Fprintf(&buf, "\n}") // func (h *StandardHeaders) Get(name string) (interface{}, bool)
@@ -212,28 +231,17 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n\nfunc (h *StandardHeaders) Set(name string, value interface{}) error {")
 	fmt.Fprintf(&buf, "\nswitch name {")
 	for _, f := range fields {
-		fmt.Fprintf(&buf, "\ncase %sKey:", f.method)
-		if f.name == "algorithm" {
-			fmt.Fprintf(&buf, "\nswitch v := value.(type) {")
-			fmt.Fprintf(&buf, "\ncase string:")
-			fmt.Fprintf(&buf, "\nh.algorithm = &v")
-			fmt.Fprintf(&buf, "\nreturn nil")
-			fmt.Fprintf(&buf, "\ncase fmt.Stringer:")
-			fmt.Fprintf(&buf, "\ns := v.String()")
-			fmt.Fprintf(&buf, "\nh.algorithm = &s")
-			fmt.Fprintf(&buf, "\nreturn nil")
-			fmt.Fprintf(&buf, "\n}")
-			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid value for %%s key: %%T`, AlgorithmKey, value)")
-		} else if f.hasAccept {
+		fmt.Fprintf(&buf, "\ncase %sKey:", f.name)
+		if f.hasAccept {
 			if f.IsPointer() {
 				fmt.Fprintf(&buf, "\nvar acceptor %s", f.PointerElem())
 				fmt.Fprintf(&buf, "\nif err := acceptor.Accept(value); err != nil {")
-				fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `invalid value for %%s key`, %sKey)", f.method)
+				fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `invalid value for %%s key`, %sKey)", f.name)
 				fmt.Fprintf(&buf, "\n}") // end if err := h.%s.Accept(value)
 				fmt.Fprintf(&buf, "\nh.%s = &acceptor", f.name)
 			} else {
 				fmt.Fprintf(&buf, "\nif err := h.%s.Accept(value); err != nil {", f.name)
-				fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `invalid value for %%s key`, %sKey)", f.method)
+				fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `invalid value for %%s key`, %sKey)", f.name)
 				fmt.Fprintf(&buf, "\n}") // end if err := h.%s.Accept(value)
 			}
 			fmt.Fprintf(&buf, "\nreturn nil")
@@ -247,14 +255,14 @@ func generateHeaders() error {
 			}
 			fmt.Fprintf(&buf, "\nreturn nil")
 			fmt.Fprintf(&buf, "\n}") // end if v, ok := value.(%s)
-			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid value for %%s key: %%T`, %sKey, value)", f.method)
+			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid value for %%s key: %%T`, %sKey, value)", f.name)
 		}
 	}
 	fmt.Fprintf(&buf, "\ndefault:")
-	fmt.Fprintf(&buf, "\nif h.privateParams == nil {")
-	fmt.Fprintf(&buf, "\nh.privateParams = map[string]interface{}{}")
-	fmt.Fprintf(&buf, "\n}") // end if h.privateParams == nil
-	fmt.Fprintf(&buf, "\nh.privateParams[name] = value")
+	fmt.Fprintf(&buf, "\nif h.PrivateParams == nil {")
+	fmt.Fprintf(&buf, "\nh.PrivateParams = map[string]interface{}{}")
+	fmt.Fprintf(&buf, "\n}") // end if h.PrivateParams == nil
+	fmt.Fprintf(&buf, "\nh.PrivateParams[name] = value")
 	fmt.Fprintf(&buf, "\n}") // end switch name
 	fmt.Fprintf(&buf, "\nreturn nil")
 	fmt.Fprintf(&buf, "\n}") // end func (h *StandardHeaders) Set(name string, value interface{})
@@ -264,12 +272,12 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n// represented as flat objects instead of differentiating the different")
 	fmt.Fprintf(&buf, "\n// parts of the message in separate sub objects.")
 	fmt.Fprintf(&buf, "\nfunc (h StandardHeaders) PopulateMap(m map[string]interface{}) error {")
-	fmt.Fprintf(&buf, "\nfor k, v := range h.privateParams {")
+	fmt.Fprintf(&buf, "\nfor k, v := range h.PrivateParams {")
 	fmt.Fprintf(&buf, "\nm[k] = v")
-	fmt.Fprintf(&buf, "\n}") // end for k, v := range h.privateParams
+	fmt.Fprintf(&buf, "\n}") // end for k, v := range h.PrivateParams
 	for _, f := range fields {
-		fmt.Fprintf(&buf, "\nif v, ok := h.Get(%sKey); ok {", f.method)
-		fmt.Fprintf(&buf, "\nm[%sKey] = v", f.method)
+		fmt.Fprintf(&buf, "\nif v, ok := h.Get(%sKey); ok {", f.name)
+		fmt.Fprintf(&buf, "\nm[%sKey] = v", f.name)
 		fmt.Fprintf(&buf, "\n}") // end if v, ok := h.Get(%sKey); ok
 	}
 	fmt.Fprintf(&buf, "\n\nreturn nil")
@@ -281,16 +289,16 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n// parts of the message in separate sub objects.")
 	fmt.Fprintf(&buf, "\nfunc (h *StandardHeaders) ExtractMap(m map[string]interface{}) (err error) {")
 	for _, f := range fields {
-		fmt.Fprintf(&buf, "\nif v, ok := m[%sKey]; ok {", f.method)
-		fmt.Fprintf(&buf, "\nif err := h.Set(%sKey, v); err != nil {", f.method)
-		fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `failed to set value for key %%s`, %sKey)", f.method)
+		fmt.Fprintf(&buf, "\nif v, ok := m[%sKey]; ok {", f.name)
+		fmt.Fprintf(&buf, "\nif err := h.Set(%sKey, v); err != nil {", f.name)
+		fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `failed to set value for key %%s`, %sKey)", f.name)
 		fmt.Fprintf(&buf, "\n}")
-		fmt.Fprintf(&buf, "\ndelete(m, %sKey)", f.method)
+		fmt.Fprintf(&buf, "\ndelete(m, %sKey)", f.name)
 		fmt.Fprintf(&buf, "\n}") // end if v, ok := m[%sKey]
 	}
 	fmt.Fprintf(&buf, "\n// Fix: A nil map is different from a empty map as far as deep.equal is concerned")
 	fmt.Fprintf(&buf, "\nif len(m) > 0 {")
-	fmt.Fprintf(&buf, "\nh.privateParams = m")
+	fmt.Fprintf(&buf, "\nh.PrivateParams = m")
 	fmt.Fprintf(&buf, "\n}")
 	fmt.Fprintf(&buf, "\n\nreturn nil")
 	fmt.Fprintf(&buf, "\n}") // end func (h *StandardHeaders) ExtractMap(m map[string]interface{}) error
@@ -298,7 +306,7 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n\nfunc (h StandardHeaders) Walk(f func(string, interface{}) error) error {")
 	fmt.Fprintf(&buf, "\nfor _, key := range []string{")
 	for i, field := range fields {
-		fmt.Fprintf(&buf, "%sKey", field.method)
+		fmt.Fprintf(&buf, "%sKey", field.name)
 		if i < len(fields)-1 {
 			fmt.Fprintf(&buf, ", ")
 		}
@@ -311,11 +319,11 @@ func generateHeaders() error {
 	fmt.Fprintf(&buf, "\n}") // end if v, ok := h.Get(key); ok
 	fmt.Fprintf(&buf, "\n}") // end for _, key := range []string{}
 
-	fmt.Fprintf(&buf, "\n\nfor k, v := range h.privateParams {")
+	fmt.Fprintf(&buf, "\n\nfor k, v := range h.PrivateParams {")
 	fmt.Fprintf(&buf, "\nif err := f(k, v); err != nil {")
 	fmt.Fprintf(&buf, "\nreturn errors.Wrapf(err, `walk function returned error for %%s`, k)")
 	fmt.Fprintf(&buf, "\n}") // end if err := f(key, v); err != nil
-	fmt.Fprintf(&buf, "\n}") // end for k, v := range h.privateParams
+	fmt.Fprintf(&buf, "\n}") // end for k, v := range h.PrivateParams
 	fmt.Fprintf(&buf, "\nreturn nil")
 	fmt.Fprintf(&buf, "\n}") // end func (h StandardHeaders) Walk(f func(string, interface{}) error)
 

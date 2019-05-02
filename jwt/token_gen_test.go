@@ -89,11 +89,11 @@ func TestHeader(t *testing.T) {
 	t.Run("GetError", func(t *testing.T) {
 
 		var h jwt.Token
-		issuer := h.Issuer()
+		issuer := h.GetIssuer()
 		if issuer != "" {
 			t.Fatalf("Get Issuer should return empty string")
 		}
-		jwtId := h.JwtID()
+		jwtId := h.GetJwtID()
 		if jwtId != "" {
 			t.Fatalf("Get JWT Id should return empty string")
 		}

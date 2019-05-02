@@ -27,37 +27,39 @@ func _main() error {
 }
 
 type tokenField struct {
-	Name      string
-	JSONKey   string
-	Type      string
-	Comment   string
+	name      string
+	typ       string
+	key       string
+	method    string
+	comment   string
 	isList    bool
 	hasAccept bool
 	noDeref   bool
 	elemType  string
+	jsonTag   string
 }
 
 func (t tokenField) UpperName() string {
-	return strings.Title(t.Name)
+	return strings.Title(t.name)
 }
 
 func (t tokenField) IsList() bool {
-	return t.isList || strings.HasPrefix(t.Type, `[]`)
+	return t.isList || strings.HasPrefix(t.typ, `[]`)
 }
 
 func (t tokenField) ListElem() string {
 	if t.elemType != "" {
 		return t.elemType
 	}
-	return strings.TrimPrefix(t.Type, `[]`)
+	return strings.TrimPrefix(t.typ, `[]`)
 }
 
 func (t tokenField) IsPointer() bool {
-	return strings.HasPrefix(t.Type, `*`)
+	return strings.HasPrefix(t.typ, `*`)
 }
 
 func (t tokenField) PointerElem() string {
-	return strings.TrimPrefix(t.Type, `*`)
+	return strings.TrimPrefix(t.typ, `*`)
 }
 
 var zerovals = map[string]string{
@@ -76,55 +78,77 @@ func generateToken() error {
 
 	var fields = []tokenField{
 		{
-			Name:      "audience",
-			JSONKey:   "aud",
-			Type:      "StringList",
-			Comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.3`,
+			name:      "Audience",
+			method:    "GetAudience",
+			typ:       "StringList",
+			key:       "aud",
+			comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.3`,
 			isList:    true,
 			hasAccept: true,
 			elemType:  `string`,
+			jsonTag:   "`" + `json:"aud,omitempty"` + "`",
 		},
 		{
-			Name:      "expiration",
-			JSONKey:   "exp",
-			Type:      "*NumericDate",
-			Comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.4`,
+			name:      "Expiration",
+			method:    "GetExpiration",
+			typ:       "*NumericDate",
+			key:       "exp",
+			comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.4`,
 			hasAccept: true,
 			noDeref:   true,
+			jsonTag:   "`" + `json:"exp,omitempty"` + "`",
 		},
 		{
-			Name:      "issuedAt",
-			JSONKey:   "iat",
-			Type:      "*NumericDate",
-			Comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.6`,
+			name:      "IssuedAt",
+			method:    "GetIssuedAt",
+			typ:       "*NumericDate",
+			key:       "iat",
+			comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.6`,
 			hasAccept: true,
 			noDeref:   true,
+			jsonTag:   "`" + `json:"iat,omitempty"` + "`",
 		},
 		{
-			Name:    "issuer",
-			JSONKey: "iss",
-			Type:    "*string",
-			Comment: `https://tools.ietf.org/html/rfc7519#section-4.1.1`,
+			name:    "Issuer",
+			method:  "GetIssuer",
+			typ:     "*string",
+			key:     "iss",
+			comment: `https://tools.ietf.org/html/rfc7519#section-4.1.1`,
+			jsonTag: "`" + `json:"iss,omitempty"` + "`",
 		},
 		{
-			Name:    "jwtID",
-			JSONKey: "jti",
-			Type:    "*string",
-			Comment: `https://tools.ietf.org/html/rfc7519#section-4.1.7`,
+			name:    "JwtID",
+			method:  "GetJwtID",
+			typ:     "*string",
+			key:     "jti",
+			comment: `https://tools.ietf.org/html/rfc7519#section-4.1.7`,
+			jsonTag: "`" + `json:"jti,omitempty"` + "`",
 		},
 		{
-			Name:      "notBefore",
-			JSONKey:   "nbf",
-			Type:      "*NumericDate",
-			Comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.5`,
+			name:      "NotBefore",
+			method:    "GetNotBefore",
+			typ:       "*NumericDate",
+			key:       "nbf",
+			comment:   `https://tools.ietf.org/html/rfc7519#section-4.1.5`,
 			hasAccept: true,
 			noDeref:   true,
+			jsonTag:   "`" + `json:"nbf,omitempty"` + "`",
 		},
 		{
-			Name:    "subject",
-			JSONKey: "sub",
-			Type:    "*string",
-			Comment: `https://tools.ietf.org/html/rfc7519#section-4.1.2`,
+			name:    "Subject",
+			method:  "GetSubject",
+			typ:     "*string",
+			key:     "sub",
+			comment: `https://tools.ietf.org/html/rfc7519#section-4.1.2`,
+			jsonTag: "`" + `json:"sub,omitempty"` + "`",
+		},
+		{
+			name:    `PrivateClaims`,
+			method:  "GetPrivateClaims",
+			typ:     `map[string]interface{}`,
+			key:     "privateClaims",
+			comment: `https://tools.ietf.org/html/rfc7515#section-4.1.4`,
+			jsonTag: "`" + `json:"privateClaims,omitempty"` + "`",
 		},
 	}
 
@@ -139,14 +163,14 @@ func generateToken() error {
 	fmt.Fprintf(&buf, "\n\n// Key names for standard claims")
 	fmt.Fprintf(&buf, "\nconst (")
 	for _, field := range fields {
-		fmt.Fprintf(&buf, "\n%sKey = %s", field.UpperName(), strconv.Quote(field.JSONKey))
+		fmt.Fprintf(&buf, "\n%sKey = %s", field.UpperName(), strconv.Quote(field.key))
 	}
 	fmt.Fprintf(&buf, "\n)") // end const
 
 	fmt.Fprintf(&buf, "\n\n// Token represents a JWT token. The object has convenience accessors")
 	fmt.Fprintf(&buf, "\n// to %d standard claims including ", len(fields))
 	for i, field := range fields {
-		fmt.Fprintf(&buf, "%s", strconv.Quote(field.JSONKey))
+		fmt.Fprintf(&buf, "%s", strconv.Quote(field.key))
 		switch {
 		case i < len(fields)-2:
 			fmt.Fprintf(&buf, ", ")
@@ -160,9 +184,8 @@ func generateToken() error {
 	fmt.Fprintf(&buf, "\n// by embedding the jwt.Token type in it")
 	fmt.Fprintf(&buf, "\ntype Token struct {")
 	for _, field := range fields {
-		fmt.Fprintf(&buf, "\n%s %s `json:\"%s,omitempty\"` // %s", field.Name, field.Type, field.JSONKey, field.Comment)
+		fmt.Fprintf(&buf, "\n%s %s %s // %s", field.name, field.typ, field.jsonTag, field.comment)
 	}
-	fmt.Fprintf(&buf, "\nprivateClaims map[string]interface{} `json:\"-\"`")
 	fmt.Fprintf(&buf, "\n}") // end type Token
 
 	fmt.Fprintf(&buf, "\n\nfunc (t *Token) Get(s string) (interface{}, bool) {")
@@ -171,35 +194,35 @@ func generateToken() error {
 		fmt.Fprintf(&buf, "\ncase %sKey:", field.UpperName())
 		switch {
 		case field.IsList():
-			fmt.Fprintf(&buf, "\nif len(t.%s) == 0 {", field.Name)
+			fmt.Fprintf(&buf, "\nif len(t.%s) == 0 {", field.name)
 			fmt.Fprintf(&buf, "\nreturn nil, false")
 			fmt.Fprintf(&buf, "\n}") // end if len(t.%s) == 0
 			fmt.Fprintf(&buf, "\nreturn ")
 			// some types such as `aud` need explicit conversion
 			var pre, post string
-			if field.Type == "StringList" {
+			if field.typ == "StringList" {
 				pre = "[]string("
 				post = ")"
 			}
-			fmt.Fprintf(&buf, "%st.%s%s, true", pre, field.Name, post)
+			fmt.Fprintf(&buf, "%st.%s%s, true", pre, field.name, post)
 		case field.IsPointer():
-			fmt.Fprintf(&buf, "\nif t.%s == nil {", field.Name)
+			fmt.Fprintf(&buf, "\nif t.%s == nil {", field.name)
 			fmt.Fprintf(&buf, "\nreturn nil, false")
 			fmt.Fprintf(&buf, "\n} else {")
 			if field.noDeref {
-				if field.Type == "*NumericDate" {
-					fmt.Fprintf(&buf, "\nreturn t.%s.Get(), true", field.Name)
+				if field.typ == "*NumericDate" {
+					fmt.Fprintf(&buf, "\nreturn t.%s.Get(), true", field.name)
 				} else {
-					fmt.Fprintf(&buf, "\nreturn t.%s, true", field.Name)
+					fmt.Fprintf(&buf, "\nreturn t.%s, true", field.name)
 				}
 			} else {
-				fmt.Fprintf(&buf, "\nreturn *(t.%s), true", field.Name)
+				fmt.Fprintf(&buf, "\nreturn *(t.%s), true", field.name)
 			}
 			fmt.Fprintf(&buf, "\n}") // end if t.%s != nil
 		}
 	}
 	fmt.Fprintf(&buf, "\n}") // end switch
-	fmt.Fprintf(&buf, "\nif v, ok := t.privateClaims[s]; ok {")
+	fmt.Fprintf(&buf, "\nif v, ok := t.PrivateClaims[s]; ok {")
 	fmt.Fprintf(&buf, "\nreturn v, true")
 	fmt.Fprintf(&buf, "\n}") // end if v, ok := t.privateClaims[s]
 	fmt.Fprintf(&buf, "\nreturn nil, false")
@@ -214,38 +237,38 @@ func generateToken() error {
 			if field.IsPointer() {
 				fmt.Fprintf(&buf, "\nvar x %s", field.PointerElem())
 			} else {
-				fmt.Fprintf(&buf, "\nvar x %s", field.Type)
+				fmt.Fprintf(&buf, "\nvar x %s", field.typ)
 			}
 			fmt.Fprintf(&buf, "\nif err := x.Accept(v); err != nil {")
-			fmt.Fprintf(&buf, "\nreturn errors.Wrap(err, `invalid value for '%s' key`)", field.Name)
+			fmt.Fprintf(&buf, "\nreturn errors.Wrap(err, `invalid value for '%s' key`)", field.name)
 			fmt.Fprintf(&buf, "\n}")
 			if field.IsPointer() {
-				fmt.Fprintf(&buf, "\nt.%s = &x", field.Name)
+				fmt.Fprintf(&buf, "\nt.%s = &x", field.name)
 			} else {
-				fmt.Fprintf(&buf, "\nt.%s = x", field.Name)
+				fmt.Fprintf(&buf, "\nt.%s = x", field.name)
 			}
 		case field.IsPointer():
 			fmt.Fprintf(&buf, "\nx, ok := v.(%s)", field.PointerElem())
 			fmt.Fprintf(&buf, "\nif !ok {")
-			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid type for '%s' key: %%T`, v)", field.Name)
+			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid type for '%s' key: %%T`, v)", field.name)
 			fmt.Fprintf(&buf, "\n}") // end if !ok
-			fmt.Fprintf(&buf, "\nt.%s = &x", field.Name)
+			fmt.Fprintf(&buf, "\nt.%s = &x", field.name)
 		case field.IsList():
 			fmt.Fprintf(&buf, "\nswitch x := v.(type) {")
 			fmt.Fprintf(&buf, "\ncase %s:", field.ListElem())
-			fmt.Fprintf(&buf, "\nt.%s = []string{x}", field.Name)
-			fmt.Fprintf(&buf, "\ncase %s:", field.Type)
-			fmt.Fprintf(&buf, "\nt.%s = x", field.Name)
+			fmt.Fprintf(&buf, "\nt.%s = []string{x}", field.name)
+			fmt.Fprintf(&buf, "\ncase %s:", field.typ)
+			fmt.Fprintf(&buf, "\nt.%s = x", field.name)
 			fmt.Fprintf(&buf, "\ndefault:")
-			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid type for '%s' key: %%T`, v)", field.Name)
+			fmt.Fprintf(&buf, "\nreturn errors.Errorf(`invalid type for '%s' key: %%T`, v)", field.name)
 			fmt.Fprintf(&buf, "\n}") // end of switch x := v.(type) {")
 		}
 	}
 	fmt.Fprintf(&buf, "\ndefault:")
-	fmt.Fprintf(&buf, "\nif t.privateClaims == nil {")
-	fmt.Fprintf(&buf, "\nt.privateClaims = make(map[string]interface{})")
-	fmt.Fprintf(&buf, "\n}") // end if h.privateParams == nil
-	fmt.Fprintf(&buf, "\nt.privateClaims[name] = v")
+	fmt.Fprintf(&buf, "\nif t.PrivateClaims == nil {")
+	fmt.Fprintf(&buf, "\nt.PrivateClaims = map[string]interface{}{}")
+	fmt.Fprintf(&buf, "\n}") // end if h.PrivateParams == nil
+	fmt.Fprintf(&buf, "\nt.PrivateClaims[name] = &v")
 	fmt.Fprintf(&buf, "\n}") // end switch name
 	fmt.Fprintf(&buf, "\nreturn nil")
 	fmt.Fprintf(&buf, "\n}") // end func (h *StandardHeaders) Set(name string, value interface{})
@@ -253,14 +276,14 @@ func generateToken() error {
 	for _, field := range fields {
 		switch {
 		case field.IsList():
-			fmt.Fprintf(&buf, "\n\nfunc (t Token) %s() %s {", field.UpperName(), field.Type)
+			fmt.Fprintf(&buf, "\n\nfunc (t Token) %s() %s {", field.method, field.typ)
 			fmt.Fprintf(&buf, "\nif v, ok := t.Get(%sKey); ok {", field.UpperName())
 			fmt.Fprintf(&buf, "\nreturn v.([]string)")
 			fmt.Fprintf(&buf, "\n}") // end if v, ok := t.Get(%sKey)
 			fmt.Fprintf(&buf, "\nreturn nil")
 			fmt.Fprintf(&buf, "\n}") // end func (t Token) %s() %s
-		case field.Type == "*NumericDate":
-			fmt.Fprintf(&buf, "\n\nfunc (t Token) %s() time.Time {", field.UpperName())
+		case field.typ == "*NumericDate":
+			fmt.Fprintf(&buf, "\n\nfunc (t Token) %s() time.Time {", field.method)
 			fmt.Fprintf(&buf, "\nif v, ok := t.Get(%sKey); ok {", field.UpperName())
 			fmt.Fprintf(&buf, "\nreturn v.(time.Time)")
 			fmt.Fprintf(&buf, "\n}")
@@ -269,7 +292,7 @@ func generateToken() error {
 		case field.IsPointer():
 			fmt.Fprintf(&buf, "\n\n// %s is a convenience function to retrieve the corresponding value store in the token", field.UpperName())
 			fmt.Fprintf(&buf, "\n// if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead")
-			fmt.Fprintf(&buf, "\n\nfunc (t Token) %s() %s {", field.UpperName(), field.PointerElem())
+			fmt.Fprintf(&buf, "\n\nfunc (t Token) %s() %s {", field.method, field.PointerElem())
 			fmt.Fprintf(&buf, "\nif v, ok := t.Get(%sKey); ok {", field.UpperName())
 			fmt.Fprintf(&buf, "\nreturn v.(%s)", field.PointerElem())
 			fmt.Fprintf(&buf, "\n}") // end if v, ok := t.Get(%sKey)
@@ -298,10 +321,10 @@ func generateToken() error {
 	fmt.Fprintf(&buf, "\nbuf.WriteRune('{')")
 
 	for i, field := range fields {
-		if strings.HasPrefix(field.Type, "*") {
-			fmt.Fprintf(&buf, "\nif t.%s != nil {", field.Name)
+		if strings.HasPrefix(field.typ, "*") {
+			fmt.Fprintf(&buf, "\nif t.%s != nil {", field.name)
 		} else {
-			fmt.Fprintf(&buf, "\nif len(t.%s) > 0 {", field.Name)
+			fmt.Fprintf(&buf, "\nif len(t.%s) > 0 {", field.name)
 		}
 		if i > 0 {
 			fmt.Fprintf(&buf, "\nif buf.Len() > 1 {")
@@ -311,19 +334,19 @@ func generateToken() error {
 		fmt.Fprintf(&buf, "\nbuf.WriteRune('\"')")
 		fmt.Fprintf(&buf, "\nbuf.WriteString(%sKey)", field.UpperName())
 		fmt.Fprintf(&buf, "\nbuf.WriteString(`\":`)")
-		fmt.Fprintf(&buf, "\nif err := writeJSON(&buf, t.%s, %sKey); err != nil {", field.Name, field.UpperName())
+		fmt.Fprintf(&buf, "\nif err := writeJSON(&buf, t.%s, %sKey); err != nil {", field.name, field.UpperName())
 		fmt.Fprintf(&buf, "\nreturn nil, err")
 		fmt.Fprintf(&buf, "\n}")
 		fmt.Fprintf(&buf, "\n}")
 	}
 
-	fmt.Fprintf(&buf, "\nif len(t.privateClaims) == 0 {")
+	fmt.Fprintf(&buf, "\nif len(t.PrivateClaims) == 0 {")
 	fmt.Fprintf(&buf, "\nbuf.WriteRune('}')")
 	fmt.Fprintf(&buf, "\nreturn buf.Bytes(), nil")
 	fmt.Fprintf(&buf, "\n}")
 
 	fmt.Fprintf(&buf, "\n// If private claims exist, they need to flattened and included in the token")
-	fmt.Fprintf(&buf, "\npcjson, err := json.Marshal(t.privateClaims)")
+	fmt.Fprintf(&buf, "\npcjson, err := json.Marshal(t.PrivateClaims)")
 	fmt.Fprintf(&buf, "\nif err != nil {")
 	fmt.Fprintf(&buf, "\nreturn nil, errors.Wrap(err, `failed to marshal private claims`)")
 	fmt.Fprintf(&buf, "\n}")

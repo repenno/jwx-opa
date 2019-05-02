@@ -1,4 +1,6 @@
-//go:generate go run internal/cmd/genheader/main.go
+/*
+/go:generate go run internal/cmd/genheader/main.go
+*/
 
 // Package jws implements the digital signature on JSON based data
 // structures as described in https://tools.ietf.org/html/rfc7515
@@ -330,7 +332,7 @@ func VerifyWithJWK(buf []byte, key jwk.Key) (payload []byte, err error) {
 		return nil, errors.Wrap(err, `failed to materialize jwk.Key`)
 	}
 
-	payload, err = Verify(buf, jwa.SignatureAlgorithm(key.Algorithm()), keyval)
+	payload, err = Verify(buf, key.GetAlgorithm(), keyval)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to verify message")
 	}
