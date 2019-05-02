@@ -56,24 +56,24 @@ func TestParse(t *testing.T) {
 			return
 		}
 	})
-	t.Run("Compact bad payload", func(t *testing.T) {
+	t.Run("Compact bad Payload", func(t *testing.T) {
 		parts := strings.Split(exampleCompactSerialization, ".")
 		parts[1] = "%badvalue%"
 		incoming := strings.Join(parts, ".")
 
 		_, err := jws.ParseString(incoming)
-		if !assert.Error(t, err, "Parsing compact serialization with bad payload should be an error") {
+		if !assert.Error(t, err, "Parsing compact serialization with bad Payload should be an error") {
 			return
 		}
 	})
-	t.Run("Compact bad signature", func(t *testing.T) {
+	t.Run("Compact bad Signature", func(t *testing.T) {
 		parts := strings.Split(exampleCompactSerialization, ".")
 		parts[2] = "%badvalue%"
 		incoming := strings.Join(parts, ".")
 
 		t.Logf("incoming = '%s'", incoming)
 		_, err := jws.ParseString(incoming)
-		if !assert.Error(t, err, "Parsing compact serialization with bad signature should be an error") {
+		if !assert.Error(t, err, "Parsing compact serialization with bad Signature should be an error") {
 			return
 		}
 	})
@@ -96,7 +96,7 @@ func TestRoundtrip(t *testing.T) {
 				return
 			}
 
-			if !assert.Equal(t, payload, verified, "verified payload matches") {
+			if !assert.Equal(t, payload, verified, "verified Payload matches") {
 				return
 			}
 		})
@@ -125,7 +125,7 @@ func TestRoundtrip(t *testing.T) {
 					return
 				}
 
-				if !assert.Equal(t, payload, verified, "verified payload matches") {
+				if !assert.Equal(t, payload, verified, "verified Payload matches") {
 					return
 				}
 			})
@@ -150,7 +150,7 @@ func TestVerifyWithJWKSet(t *testing.T) {
 	}
 
 	buf, err := jws.Sign(payload, jwa.RS256, key)
-	if !assert.NoError(t, err, "Signature generated successfully") {
+	if !assert.NoError(t, err, "GetSignature generated successfully") {
 		return
 	}
 
@@ -164,7 +164,7 @@ func TestVerifyWithJWKSet(t *testing.T) {
 		return
 	}
 
-	if !assert.Equal(t, payload, verified, "Verified payload is the same") {
+	if !assert.Equal(t, payload, verified, "Verified Payload is the same") {
 		return
 	}
 }
@@ -178,7 +178,7 @@ func TestRoundtrip_RSACompact(t *testing.T) {
 		}
 
 		buf, err := jws.Sign(payload, alg, key)
-		if !assert.NoError(t, err, "(%s) Signature generated successfully", alg) {
+		if !assert.NoError(t, err, "(%s) GetSignature generated successfully", alg) {
 			return
 		}
 
@@ -192,7 +192,7 @@ func TestRoundtrip_RSACompact(t *testing.T) {
 				return
 			}
 
-			if !assert.Equal(t, payload, m.Payload(), "(%s) %s: Payload is decoded", alg, name) {
+			if !assert.Equal(t, payload, m.GetPayload(), "(%s) %s: GetPayload is decoded", alg, name) {
 				return
 			}
 		}
@@ -202,7 +202,7 @@ func TestRoundtrip_RSACompact(t *testing.T) {
 			return
 		}
 
-		if !assert.Equal(t, payload, verified, "(%s) Verified payload is the same", alg) {
+		if !assert.Equal(t, payload, verified, "(%s) Verified Payload is the same", alg) {
 			return
 		}
 	}
@@ -268,8 +268,8 @@ func TestEncode(t *testing.T) {
 			return
 		}
 
-		signatures := msg.Signatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one signature`) {
+		signatures := msg.GetSignatures()
+		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
 			return
 		}
 
@@ -298,18 +298,18 @@ func TestEncode(t *testing.T) {
 
 		hdrBuf, err := buffer.Buffer(hdr).Base64Encode()
 		if err != nil {
-			t.Fatal("Failed to base64 encode protected header")
+			t.Fatal("Failed to base64 encode Protected header")
 		}
 		standardHeaders := &jws.StandardHeaders{}
 		err = json.Unmarshal(hdrBytes, standardHeaders)
 		if err != nil {
-			t.Fatal("Failed to parse protected header")
+			t.Fatal("Failed to parse Protected header")
 		}
 		alg := standardHeaders.GetAlgorithm()
 
 		payload, err := buffer.Buffer(examplePayload).Base64Encode()
 		if err != nil {
-			t.Fatal("Failed to base64 encode payload")
+			t.Fatal("Failed to base64 encode Payload")
 		}
 
 		keys, _ := jwk.ParseString(jwksrc)
@@ -328,8 +328,8 @@ func TestEncode(t *testing.T) {
 			return
 		}
 
-		signatures := msg.Signatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one signature`) {
+		signatures := msg.GetSignatures()
+		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
 			return
 		}
 
@@ -351,7 +351,7 @@ func TestEncode(t *testing.T) {
 			[]byte{'.'},
 		)
 
-		if !assert.NoError(t, v.Verify(signingInput, signatures[0].Signature(), key), "Verify succeeds") {
+		if !assert.NoError(t, v.Verify(signingInput, signatures[0].GetSignature(), key), "Verify succeeds") {
 			return
 		}
 	})
@@ -366,7 +366,7 @@ func TestEncode(t *testing.T) {
 "d":"AY5pb7A0UFiB3RELSD64fTLOSV_jazdF7fLYyuTw8lOfRhWg6Y6rUrPAxerEzgdRhajnu0ferB0d53vM9mE15j2C"
 }`
 
-		// "Payload"
+		// "GetPayload"
 		jwsPayload := []byte{80, 97, 121, 108, 111, 97, 100}
 
 		standardHeaders := &jws.StandardHeaders{}
@@ -406,11 +406,11 @@ func TestEncode(t *testing.T) {
 		s.SetBytes(decodedJwsSignature[n:])
 		signingHdr, err := buffer.Buffer(hdr).Base64Encode()
 		if err != nil {
-			t.Fatal("Failed to base64 encode headers")
+			t.Fatal("Failed to base64 encode Headers")
 		}
 		signingPayload, err := buffer.Buffer(jwsPayload).Base64Encode()
 		if err != nil {
-			t.Fatal("Failed to base64 encode payload")
+			t.Fatal("Failed to base64 encode Payload")
 		}
 		jwsSigningInput := bytes.Join(
 			[][]byte{
@@ -505,8 +505,8 @@ func TestEncode(t *testing.T) {
 			return
 		}
 
-		signatures := msg.Signatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one signature`) {
+		signatures := msg.GetSignatures()
+		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
 			return
 		}
 
@@ -578,17 +578,17 @@ func TestEncode(t *testing.T) {
 			[]byte{'.'},
 		)
 
-		// The signature contains random factor, so unfortunately we can't match
+		// The Signature contains random factor, so unfortunately we can't match
 		// the output against a fixed expected outcome. We'll wave doing an
-		// exact match, and just try to verify using the signature
+		// exact match, and just try to verify using the Signature
 
 		msg, err := jws.Parse(bytes.NewReader(encoded))
 		if !assert.NoError(t, err, "Parsing compact encoded serialization succeeds") {
 			return
 		}
 
-		signatures := msg.Signatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one signature`) {
+		signatures := msg.GetSignatures()
+		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
 			return
 		}
 
@@ -615,9 +615,9 @@ func TestEncode(t *testing.T) {
 
 		{
 			v := map[string]interface{}{}
-			err := json.Unmarshal(m.Payload(), &v)
+			err := json.Unmarshal(m.GetPayload(), &v)
 			if err != nil {
-				t.Fatalf("Failed to parse payload: %s", err.Error())
+				t.Fatalf("Failed to parse Payload: %s", err.Error())
 			}
 			if v["iss"] != "joe" {
 				t.Fatalf("Mismatched iss (%s):(%s)", v["iss"], "joe")
@@ -630,33 +630,33 @@ func TestEncode(t *testing.T) {
 			}
 		}
 
-		if !assert.Len(t, m.Signatures(), 1, "There should be 1 signature") {
+		if !assert.Len(t, m.GetSignatures(), 1, "There should be 1 Signature") {
 			return
 		}
 
-		signatures := m.Signatures()
+		signatures := m.GetSignatures()
 		algorithm := signatures[0].ProtectedHeaders().GetAlgorithm()
 		if algorithm != jwa.NoSignature {
 			t.Fatal("Algorithm in header does not match")
 		}
 
-		if !assert.Empty(t, signatures[0].Signature(), "Signature should be empty") {
+		if !assert.Empty(t, signatures[0].GetSignature(), "GetSignature should be empty") {
 			return
 		}
 	})
 	t.Run("CompleteJSON", func(t *testing.T) {
 		s := `{
-    "payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
+    "Payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
     "signatures":[
       {
         "header": {"kid":"2010-12-29"},
-        "protected":"eyJhbGciOiJSUzI1NiJ9",
-        "signature": "cC4hiUPoj9Eetdgtv3hF80EGrhuB__dzERat0XF9g2VtQgr9PJbu3XOiZj5RZmh7AAuHIm4Bh-0Qc_lF5YKt_O8W2Fp5jujGbds9uJdbF9CUAr7t1dnZcAcQjbKBYNX4BAynRFdiuB--f_nZLgrnbyTyWzO75vRK5h6xBArLIARNPvkSjtQBMHlb1L07Qe7K0GarZRmB_eSN9383LcOLn6_dO--xi12jzDwusC-eOkHWEsqtFZESc6BfI7noOPqvhJ1phCnvWh6IeYI2w9QOYEUipUTI8np6LbgGY9Fs98rqVt5AXLIhWkWywlVmtVrBp0igcN_IoypGlUPQGe77Rw"
+        "Protected":"eyJhbGciOiJSUzI1NiJ9",
+        "Signature": "cC4hiUPoj9Eetdgtv3hF80EGrhuB__dzERat0XF9g2VtQgr9PJbu3XOiZj5RZmh7AAuHIm4Bh-0Qc_lF5YKt_O8W2Fp5jujGbds9uJdbF9CUAr7t1dnZcAcQjbKBYNX4BAynRFdiuB--f_nZLgrnbyTyWzO75vRK5h6xBArLIARNPvkSjtQBMHlb1L07Qe7K0GarZRmB_eSN9383LcOLn6_dO--xi12jzDwusC-eOkHWEsqtFZESc6BfI7noOPqvhJ1phCnvWh6IeYI2w9QOYEUipUTI8np6LbgGY9Fs98rqVt5AXLIhWkWywlVmtVrBp0igcN_IoypGlUPQGe77Rw"
       },
       {
         "header": {"kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"},
-        "protected":"eyJhbGciOiJFUzI1NiJ9",
-        "signature": "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
+        "Protected":"eyJhbGciOiJFUzI1NiJ9",
+        "Signature": "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
       }
     ]
   }`
@@ -666,13 +666,13 @@ func TestEncode(t *testing.T) {
 			return
 		}
 
-		if !assert.Len(t, m.Signatures(), 2, "There should be 2 signatures") {
+		if !assert.Len(t, m.GetSignatures(), 2, "There should be 2 signatures") {
 			return
 		}
 
 		var sigs []*jws.Signature
 		sigs = m.LookupSignature("2010-12-29")
-		if !assert.Len(t, sigs, 1, "There should be 1 signature with kid = '2010-12-29'") {
+		if !assert.Len(t, sigs, 1, "There should be 1 Signature with kid = '2010-12-29'") {
 			return
 		}
 
@@ -690,42 +690,42 @@ func TestEncode(t *testing.T) {
 	})
 	t.Run("Protected Header lookup", func(t *testing.T) {
 		s := `{
-    "payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
+    "Payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
     "signatures":[
       {
         "header": {"cty":"example"},
-        "protected":"eyJhbGciOiJFUzI1NiIsImtpZCI6ImU5YmMwOTdhLWNlNTEtNDAzNi05NTYyLWQyYWRlODgyZGIwZCJ9",
-        "signature": "JcLb1udPAV72TayGv6eawZKlIQQ3K1NzB0fU7wwYoFypGxEczdCQU-V9jp4WwY2ueJKYeE4fF6jigB0PdSKR0Q"
+        "Protected":"eyJhbGciOiJFUzI1NiIsImtpZCI6ImU5YmMwOTdhLWNlNTEtNDAzNi05NTYyLWQyYWRlODgyZGIwZCJ9",
+        "Signature": "JcLb1udPAV72TayGv6eawZKlIQQ3K1NzB0fU7wwYoFypGxEczdCQU-V9jp4WwY2ueJKYeE4fF6jigB0PdSKR0Q"
       }
     ]
   }`
 
 		// Protected Header is {"alg":"ES256","kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"}
-		// This protected header combination forces the parser/unmarshal to go trough the code path to populate and look for protected header fields.
-		// The signature is valid.
+		// This Protected header combination forces the parser/unmarshal to go trough the code path to populate and look for Protected header fields.
+		// The Signature is valid.
 
 		m, err := jws.Parse(strings.NewReader(s))
 		if !assert.NoError(t, err, "Unmarshal complete json serialization") {
 			return
 		}
-		if len(m.Signatures()) != 1 {
-			t.Fatal("There should be 1 signature")
+		if len(m.GetSignatures()) != 1 {
+			t.Fatal("There should be 1 Signature")
 		}
 
 		var sigs []*jws.Signature
 		sigs = m.LookupSignature("e9bc097a-ce51-4036-9562-d2ade882db0d")
-		if !assert.Len(t, sigs, 1, "There should be 1 signature with kid = '2010-12-29'") {
+		if !assert.Len(t, sigs, 1, "There should be 1 Signature with kid = '2010-12-29'") {
 			return
 		}
 	})
 	t.Run("FlattenedJSON", func(t *testing.T) {
 		s := `{
-    "payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
-    "protected":"eyJhbGciOiJFUzI1NiJ9",
+    "Payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
+    "Protected":"eyJhbGciOiJFUzI1NiJ9",
     "header": {
       "kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"
     },
-    "signature": "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
+    "Signature": "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
   }`
 
 		m, err := jws.Parse(strings.NewReader(s))
@@ -733,12 +733,9 @@ func TestEncode(t *testing.T) {
 			return
 		}
 
-		if !assert.Len(t, m.Signatures(), 1, "There should be 1 signature") {
+		if !assert.Len(t, m.GetSignatures(), 1, "There should be 1 Signature") {
 			return
 		}
-
-		jsonbuf, _ := json.MarshalIndent(m, "", "  ")
-		t.Logf("%s", jsonbuf)
 	})
 }
 
@@ -757,11 +754,11 @@ func TestSign_HeaderValues(t *testing.T) {
 		return
 	}
 
-	payload := []byte("Hello, World!")
+	Payload := []byte("Hello, World!")
 
 	hdr := jws.NewHeader()
 	hdr.KeyID = "helloworld01"
-	encoded, err := jws.Sign(payload, jwa.ES256, privkey, jws.WithPublicHeaders(hdr))
+	encoded, err := jws.Sign(Payload, jwa.ES256, privkey, jws.WithPublicHeaders(hdr))
 	if !assert.NoError(t, err, "Sign should succeed") {
 		return
 	}
@@ -773,7 +770,7 @@ func TestSign_HeaderValues(t *testing.T) {
 		return
 	}
 
-	if !assert.Equal(t, hdr.KeyID, msg.Signatures[0].ProtectedHeader.KeyID, "KeyID should match") {
+	if !assert.Equal(t, hdr.KeyID, msg.GetSignatures[0].ProtectedHeader.KeyID, "KeyID should match") {
 		return
 	}
 
@@ -781,7 +778,7 @@ func TestSign_HeaderValues(t *testing.T) {
 	if !assert.NoError(t, err, "Verify should succeed") {
 		return
 	}
-	if !assert.Equal(t, verified, payload, "Payload should match") {
+	if !assert.Equal(t, verified, Payload, "GetPayload should match") {
 		return
 	}
 }
@@ -842,7 +839,7 @@ func TestDecode_ES384Compact_NoSigTrim(t *testing.T) {
 	buf.Write(payload)
 
 	decodedSignature := make([]byte, base64.RawURLEncoding.DecodedLen(len(signature)))
-	if _, err := base64.RawURLEncoding.Decode(decodedSignature, signature); !assert.NoError(t, err, `decoding signature should succeed`) {
+	if _, err := base64.RawURLEncoding.Decode(decodedSignature, signature); !assert.NoError(t, err, `decoding Signature should succeed`) {
 		return
 	}
 

@@ -48,7 +48,7 @@ func TestSign(t *testing.T) {
 		payload := []byte("Hello, world")
 
 		signed, err := signer.Sign(payload, rsakey)
-		if !assert.NoError(t, err, "Payload signed") {
+		if !assert.NoError(t, err, "GetPayload signed") {
 			return
 		}
 
@@ -57,7 +57,7 @@ func TestSign(t *testing.T) {
 			return
 		}
 
-		if !assert.NoError(t, verifier.Verify(payload, signed, &rsakey.PublicKey), "Payload verified") {
+		if !assert.NoError(t, verifier.Verify(payload, signed, &rsakey.PublicKey), "GetPayload verified") {
 			return
 		}
 	})

@@ -48,7 +48,7 @@ func Parse(src io.Reader, options ...Option) (*Token, error) {
 	}
 
 	token := New()
-	if err := json.Unmarshal(m.Payload(), token); err != nil {
+	if err := json.Unmarshal(m.GetPayload(), token); err != nil {
 		return nil, errors.Wrap(err, `failed to parse token`)
 	}
 	return token, nil

@@ -1,30 +1,30 @@
 package jws
 
 func (s Signature) PublicHeaders() Headers {
-	return s.headers
+	return s.Headers
 }
 
 func (s Signature) ProtectedHeaders() Headers {
-	return s.protected
+	return s.Protected
 }
 
-func (s Signature) Signature() []byte {
-	return s.signature
+func (s Signature) GetSignature() []byte {
+	return s.Signature
 }
 
-func (m Message) Payload() []byte {
-	return m.payload
+func (m Message) GetPayload() []byte {
+	return m.Payload
 }
 
-func (m Message) Signatures() []*Signature {
-	return m.signatures
+func (m Message) GetSignatures() []*Signature {
+	return m.Signatures
 }
 
-// LookupSignature looks up a particular signature entry using
+// LookupSignature looks up a particular Signature entry using
 // the `kid` value
 func (m Message) LookupSignature(kid string) []*Signature {
 	var sigs []*Signature
-	for _, sig := range m.signatures {
+	for _, sig := range m.Signatures {
 		if hdr := sig.PublicHeaders(); hdr != nil {
 			hdrKeyId, ok := hdr.Get(KeyIDKey)
 			if ok && hdrKeyId == kid {
