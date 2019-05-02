@@ -1,7 +1,3 @@
-/*
-/go:generate go run internal/cmd/genheader/main.go
-*/
-
 // Package jws implements the digital signature on JSON based data
 // structures as described in https://tools.ietf.org/html/rfc7515
 //

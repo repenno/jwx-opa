@@ -1,10 +1,4 @@
-.PHONY: generate realclean cover viewcover
-
-generate: 
-	@$(MAKE) generate-jwa generate-jwk generate-jws generate-jwt
-
-generate-%:
-	@cd $(patsubst generate-%,%,$@); go generate 
+.PHONY: realclean cover viewcover
 
 realclean:
 	rm coverage.out
