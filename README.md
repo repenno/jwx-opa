@@ -1,6 +1,6 @@
 # jwx
 
-[![Build Status](https://travis-ci.org/repenno/jwx-opa.svg?branch=master)](https://travis-ci.org/repenno/jwx-opa)
+[![Build Status](https://travis-ci.org/repenno/jwx-opa.svg?branch=master)](https://travis-ci.org/repenno/jwx-opa)  [![Go Report Card](https://goreportcard.com/badge/repenno/jwx-opa)](https://goreportcard.com/report/repenno/jwx-opa)
 
 
 Implementation of various JWx technologies
