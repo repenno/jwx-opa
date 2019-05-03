@@ -12,15 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/repenno/jwx-opa/buffer"
-	"github.com/repenno/jwx-opa/internal/ecdsautil"
-	"github.com/repenno/jwx-opa/internal/rsautil"
 	"github.com/repenno/jwx-opa/jwa"
 	"github.com/repenno/jwx-opa/jwk"
 	"github.com/repenno/jwx-opa/jws"
 	"github.com/repenno/jwx-opa/jws/sign"
 	"github.com/repenno/jwx-opa/jws/verify"
-	"github.com/stretchr/testify/assert"
 )
 
 const examplePayload = `{"iss":"joe",` + "\r\n" + ` "exp":1300819380,` + "\r\n" + ` "http://example.com/is_root":true}`
@@ -28,9 +24,9 @@ const exampleCompactSerialization = `eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.ey
 
 func TestParse(t *testing.T) {
 	t.Run("Empty bytes.Buffer", func(t *testing.T) {
-		_, err := jws.Parse(&bytes.Buffer{})
-		if !assert.Error(t, err, "Parsing an empty buffer should result in an error") {
-			return
+		_, err := jws.ParseString("")
+		if err == nil {
+			t.Fatal("Parsing an empty buffer should result in an error")
 		}
 	})
 	t.Run("Compact missing parts", func(t *testing.T) {
@@ -42,8 +38,8 @@ func TestParse(t *testing.T) {
 			".",
 		)
 		_, err := jws.ParseString(incoming)
-		if !assert.Error(t, err, "Parsing compact serialization with less than 3 parts should be an error") {
-			return
+		if err == nil {
+			t.Fatalf("Parsing compact serialization with less than 3 parts should be an error")
 		}
 	})
 	t.Run("Compact bad header", func(t *testing.T) {
@@ -52,8 +48,8 @@ func TestParse(t *testing.T) {
 		incoming := strings.Join(parts, ".")
 
 		_, err := jws.ParseString(incoming)
-		if !assert.Error(t, err, "Parsing compact serialization with bad header should be an error") {
-			return
+		if err == nil {
+			t.Fatal("Parsing compact serialization with bad header should be an error")
 		}
 	})
 	t.Run("Compact bad Payload", func(t *testing.T) {
@@ -62,8 +58,8 @@ func TestParse(t *testing.T) {
 		incoming := strings.Join(parts, ".")
 
 		_, err := jws.ParseString(incoming)
-		if !assert.Error(t, err, "Parsing compact serialization with bad Payload should be an error") {
-			return
+		if err == nil {
+			t.Fatal("Parsing compact serialization with bad Payload should be an error")
 		}
 	})
 	t.Run("Compact bad Signature", func(t *testing.T) {
@@ -71,15 +67,14 @@ func TestParse(t *testing.T) {
 		parts[2] = "%badvalue%"
 		incoming := strings.Join(parts, ".")
 
-		t.Logf("incoming = '%s'", incoming)
 		_, err := jws.ParseString(incoming)
-		if !assert.Error(t, err, "Parsing compact serialization with bad Signature should be an error") {
-			return
+		if err == nil {
+			t.Fatal("Parsing compact serialization with bad Signature should be an error")
 		}
 	})
 }
 
-func TestRoundtrip(t *testing.T) {
+func TestRoundTrip(t *testing.T) {
 	payload := []byte("Lorem ipsum")
 	sharedKey := []byte("Avracadabra")
 
@@ -87,85 +82,51 @@ func TestRoundtrip(t *testing.T) {
 	for _, alg := range hmacAlgorithms {
 		t.Run("HMAC "+alg.String(), func(t *testing.T) {
 			signed, err := jws.Sign(payload, alg, sharedKey)
-			if !assert.NoError(t, err, "Sign succeeds") {
-				return
+			if err != nil {
+				t.Fatalf("Failed to sign input: %s", err.Error())
 			}
-
 			verified, err := jws.Verify(signed, alg, sharedKey)
-			if !assert.NoError(t, err, "Verify succeeded") {
-				return
+			if err != nil {
+				t.Fatalf("Message verification failed: %s", err.Error())
 			}
-
-			if !assert.Equal(t, payload, verified, "verified Payload matches") {
-				return
+			if bytes.Compare(payload, verified) != 0 {
+				t.Fatalf("Mismatched payload (%s):(%s)", payload, verified)
 			}
 		})
 	}
-	t.Run("HMAC SignMulti", func(t *testing.T) {
-		var signed []byte
-		t.Run("Sign", func(t *testing.T) {
-			var options []jws.Option
-			for _, alg := range hmacAlgorithms {
-				signer, err := sign.New(alg)
-				if !assert.NoError(t, err, `sign.New should succeed`) {
-					return
-				}
-				options = append(options, jws.WithSigner(signer, sharedKey, nil, nil))
-			}
-			var err error
-			signed, err = jws.SignMulti(payload, options...)
-			if !assert.NoError(t, err, `jws.SignMulti should succeed`) {
-				return
-			}
-		})
-		for _, alg := range hmacAlgorithms {
-			t.Run("Verify "+alg.String(), func(t *testing.T) {
-				verified, err := jws.Verify(signed, alg, sharedKey)
-				if !assert.NoError(t, err, "Verify succeeded") {
-					return
-				}
-
-				if !assert.Equal(t, payload, verified, "verified Payload matches") {
-					return
-				}
-			})
-		}
-	})
 }
 
 func TestVerifyWithJWKSet(t *testing.T) {
 	payload := []byte("Hello, World!")
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if !assert.NoError(t, err, "RSA key generated") {
-		return
+	if err != nil {
+		t.Fatalf("Failed to generate key: %s", err.Error())
 	}
-
 	jwkKey, err := jwk.New(&key.PublicKey)
-	if !assert.NoError(t, err, "JWK public key generated") {
-		return
+	if err != nil {
+		t.Fatalf("Failed to create JWX Private Key: %s", err.Error())
 	}
 	err = jwkKey.Set(jwk.AlgorithmKey, jwa.RS256)
-	if !assert.NoError(t, err, "Algorithm set successfully") {
-		return
+	if err != nil {
+		t.Fatalf("Failed to set alg: %s", err.Error())
+	}
+	signature, err := jws.Sign(payload, jwa.RS256, key)
+	if err != nil {
+		t.Fatalf("Failed to sign message: %s", err.Error())
 	}
 
-	buf, err := jws.Sign(payload, jwa.RS256, key)
-	if !assert.NoError(t, err, "GetSignature generated successfully") {
-		return
+	verified, err := jws.VerifyWithJWKSet(signature, &jwk.Set{Keys: []jwk.Key{jwkKey}}, nil)
+	if err != nil {
+		t.Fatalf("Failed to verify with JWKSet: %s", err.Error())
 	}
 
-	verified, err := jws.VerifyWithJWKSet(buf, &jwk.Set{Keys: []jwk.Key{jwkKey}}, nil)
-	if !assert.NoError(t, err, "Verify is successful") {
-		return
+	verified, err = jws.VerifyWithJWK(signature, jwkKey)
+	if err != nil {
+		t.Fatalf("Failed to verify with JWK: %s", err.Error())
 	}
 
-	verified, err = jws.VerifyWithJWK(buf, jwkKey)
-	if !assert.NoError(t, err, "Verify is successful") {
-		return
-	}
-
-	if !assert.Equal(t, payload, verified, "Verified Payload is the same") {
-		return
+	if bytes.Compare(payload, verified) != 0 {
+		t.Fatalf("Mismatched payload (%s):(%s)", payload, verified)
 	}
 }
 
@@ -173,37 +134,22 @@ func TestRoundtrip_RSACompact(t *testing.T) {
 	payload := []byte("Hello, World!")
 	for _, alg := range []jwa.SignatureAlgorithm{jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512} {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
-		if !assert.NoError(t, err, "RSA key generated") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to generate key: %s", err.Error())
 		}
 
 		buf, err := jws.Sign(payload, alg, key)
-		if !assert.NoError(t, err, "(%s) GetSignature generated successfully", alg) {
-			return
-		}
-
-		parsers := map[string]func([]byte) (*jws.Message, error){
-			"Parse(io.Reader)": func(b []byte) (*jws.Message, error) { return jws.Parse(bytes.NewReader(b)) },
-			"Parse(string)":    func(b []byte) (*jws.Message, error) { return jws.ParseString(string(b)) },
-		}
-		for name, f := range parsers {
-			m, err := f(buf)
-			if !assert.NoError(t, err, "(%s) %s is successful", alg, name) {
-				return
-			}
-
-			if !assert.Equal(t, payload, m.GetPayload(), "(%s) %s: GetPayload is decoded", alg, name) {
-				return
-			}
+		if err != nil {
+			t.Fatalf("Failed to sign message: %s", err.Error())
 		}
 
 		verified, err := jws.Verify(buf, alg, &key.PublicKey)
-		if !assert.NoError(t, err, "(%s) Verify is successful", alg) {
-			return
+		if err != nil {
+			t.Fatalf("Failed to verify signature: %s", err.Error())
 		}
 
-		if !assert.Equal(t, payload, verified, "(%s) Verified Payload is the same", alg) {
-			return
+		if bytes.Compare(payload, verified) != 0 {
+			t.Fatalf("Mismatched payloads (%s):(%s)", payload, verified)
 		}
 	}
 }
@@ -213,64 +159,51 @@ func TestEncode(t *testing.T) {
 	t.Run("HS256Compact", func(t *testing.T) {
 		const hdr = `{"typ":"JWT",` + "\r\n" + ` "alg":"HS256"}`
 		const hmacKey = `AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow`
-		const expected = `eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk`
+		const expectedCompact = `eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk`
 
-		hmacKeyDecoded := buffer.Buffer{}
-		err := hmacKeyDecoded.Base64Decode([]byte(hmacKey))
-		if !assert.NoError(t, err, "HMAC base64 decoded successful") {
-			return
+		hmacKeyDecoded, err := base64.RawURLEncoding.DecodeString(hmacKey)
+		if err != nil {
+			t.Fatalf("Failed to decode HMAC Key: %s", err.Error())
 		}
 
-		hdrbuf, err := buffer.Buffer(hdr).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
-		payload, err := buffer.Buffer(examplePayload).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
-
-		signingInput := bytes.Join(
-			[][]byte{
-				hdrbuf,
+		hdrBuf := base64.RawURLEncoding.EncodeToString([]byte(hdr))
+		payload := base64.RawURLEncoding.EncodeToString([]byte(examplePayload))
+		signingInput := strings.Join(
+			[]string{
+				hdrBuf,
 				payload,
-			},
-			[]byte{'.'},
+			}, ".",
 		)
 
 		signer, err := sign.New(jwa.HS256)
-		if !assert.NoError(t, err, "HMAC signer created successfully") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to create HMAC signer: %s", err.Error())
 		}
 
-		signature, err := signer.Sign(signingInput, hmacKeyDecoded.Bytes())
-		if !assert.NoError(t, err, "PayloadSign is successful") {
-			return
+		signature, err := signer.Sign([]byte(signingInput), hmacKeyDecoded)
+		if err != nil {
+			t.Fatalf("Failed to sign input: %s", err.Error())
 		}
-		sigbuf, err := buffer.Buffer(signature).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
-
-		encoded := bytes.Join(
-			[][]byte{
+		encSignature := base64.RawURLEncoding.EncodeToString(signature)
+		realizedCompact := strings.Join(
+			[]string{
 				signingInput,
-				sigbuf,
-			},
-			[]byte{'.'},
+				encSignature,
+			}, ".",
 		)
-		if !assert.Equal(t, expected, string(encoded), "generated compact serialization should match") {
-			return
+
+		if expectedCompact != realizedCompact {
+			t.Fatal("Mismatched compact serializations")
 		}
 
-		msg, err := jws.Parse(bytes.NewReader(encoded))
-		if !assert.NoError(t, err, "Parsing compact encoded serialization succeeds") {
-			return
+		msg, err := jws.ParseString(realizedCompact)
+		if err != nil {
+			t.Fatalf("Failed to parse realized serialization: %s", err.Error())
 		}
 
 		signatures := msg.GetSignatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
-			return
+		if len(signatures) != 1 {
+			t.Fatalf("Invalid number of signatures: %d", len(signatures))
 		}
 
 		algorithm := signatures[0].ProtectedHeaders().GetAlgorithm()
@@ -279,40 +212,35 @@ func TestEncode(t *testing.T) {
 		}
 
 		v, err := verify.New(jwa.HS256)
-		if !assert.NoError(t, err, "HmacVerify created") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to create verifier: %s", err.Error())
 		}
 
-		if !assert.NoError(t, v.Verify(signingInput, signature, hmacKeyDecoded.Bytes()), "Verify succeeds") {
-			return
+		err = v.Verify([]byte(signingInput), signature, hmacKeyDecoded)
+		if err != nil {
+			t.Fatalf("Message verification failed: %s", err.Error())
 		}
 	})
 	t.Run("HS256CompactLiteral", func(t *testing.T) {
 		const hdr = `{"typ":"JWT",` + "\r\n" + ` "alg":"HS256"}`
-		const jwksrc = `{
+		const jwkSrc = `{
 "kty":"oct",
 "k":"AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow"
 }`
 
 		hdrBytes := []byte(hdr)
 
-		hdrBuf, err := buffer.Buffer(hdr).Base64Encode()
-		if err != nil {
-			t.Fatal("Failed to base64 encode Protected header")
-		}
 		standardHeaders := &jws.StandardHeaders{}
-		err = json.Unmarshal(hdrBytes, standardHeaders)
+		err := json.Unmarshal(hdrBytes, standardHeaders)
 		if err != nil {
 			t.Fatal("Failed to parse Protected header")
 		}
 		alg := standardHeaders.GetAlgorithm()
 
-		payload, err := buffer.Buffer(examplePayload).Base64Encode()
+		keys, err := jwk.ParseString(jwkSrc)
 		if err != nil {
-			t.Fatal("Failed to base64 encode Payload")
+			t.Fatalf("Failed to parse JWK: %s", err.Error())
 		}
-
-		keys, _ := jwk.ParseString(jwksrc)
 		key, err := keys.Keys[0].Materialize()
 		if err != nil {
 			t.Fatal("Failed to parse key")
@@ -323,15 +251,11 @@ func TestEncode(t *testing.T) {
 			t.Fatal("Failed to sign message")
 		}
 
-		msg, err := jws.Parse(bytes.NewReader(jwsCompact))
-		if !assert.NoError(t, err, "Parsing compact encoded serialization succeeds") {
-			return
+		msg, err := jws.ParseByte(jwsCompact)
+		if err != nil {
+			t.Fatalf("Failed to parse compact serialization: %s", err.Error())
 		}
-
 		signatures := msg.GetSignatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
-			return
-		}
 
 		algorithm := signatures[0].ProtectedHeaders().GetAlgorithm()
 		if algorithm != alg {
@@ -339,26 +263,32 @@ func TestEncode(t *testing.T) {
 		}
 
 		v, err := verify.New(alg)
-		if !assert.NoError(t, err, "HmacVerify created") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to create verifier: %s", err.Error())
+		}
+		hdrBuf := base64.RawURLEncoding.EncodeToString([]byte(hdr))
+		payload := base64.RawURLEncoding.EncodeToString([]byte(examplePayload))
+		if err != nil {
+			t.Fatal("Failed to base64 encode Payload")
 		}
 
-		signingInput := bytes.Join(
-			[][]byte{
+		signingInput := strings.Join(
+			[]string{
 				hdrBuf,
 				payload,
 			},
-			[]byte{'.'},
+			".",
 		)
 
-		if !assert.NoError(t, v.Verify(signingInput, signatures[0].GetSignature(), key), "Verify succeeds") {
+		err = v.Verify([]byte(signingInput), signatures[0].GetSignature(), key)
+		if err != nil {
 			return
 		}
 	})
 	t.Run("ES512Compact", func(t *testing.T) {
 		// ES256Compact tests that https://tools.ietf.org/html/rfc7515#appendix-A.3 works
 		hdr := []byte{123, 34, 97, 108, 103, 34, 58, 34, 69, 83, 53, 49, 50, 34, 125}
-		const jwksrc = `{
+		const jwkSrc = `{
 "kty":"EC",
 "crv":"P-521",
 "x":"AekpBQ8ST8a8VcfVOTNl353vSrDCLLJXmPk06wTjxrrjcBpXp5EOnYG_NjFZ6OvLFV1jSfS9tsz4qUxcWceqwQGk",
@@ -376,9 +306,9 @@ func TestEncode(t *testing.T) {
 		}
 		alg := standardHeaders.GetAlgorithm()
 
-		keys, err := jwk.ParseString(jwksrc)
+		keys, err := jwk.ParseString(jwkSrc)
 		if err != nil {
-			t.Fatal("Failed to parse JWK")
+			t.Fatalf("Failed to parse JWK: %s", err.Error())
 		}
 		key, err := keys.Keys[0].Materialize()
 		if err != nil {
@@ -391,35 +321,27 @@ func TestEncode(t *testing.T) {
 		}
 
 		// Verify with standard ecdsa library
-		_, _, jwsSignature, err := jws.SplitCompact(bytes.NewReader(jwsCompact))
+		parts, err := jws.SplitCompact(string(jwsCompact[:]))
 		if err != nil {
 			t.Fatal("Failed to split compact JWT")
 		}
-		decodedJwsSignature := make([]byte, base64.RawURLEncoding.DecodedLen(len(jwsSignature)))
-		decodedLen, err := base64.RawURLEncoding.Decode(decodedJwsSignature, jwsSignature)
+		decodedJwsSignature, err := base64.RawURLEncoding.DecodeString(parts[2])
 		if err != nil {
 			t.Fatal("Failed to sign message")
 		}
 		r, s := &big.Int{}, &big.Int{}
-		n := decodedLen / 2
+		n := len(decodedJwsSignature) / 2
 		r.SetBytes(decodedJwsSignature[:n])
 		s.SetBytes(decodedJwsSignature[n:])
-		signingHdr, err := buffer.Buffer(hdr).Base64Encode()
-		if err != nil {
-			t.Fatal("Failed to base64 encode Headers")
-		}
-		signingPayload, err := buffer.Buffer(jwsPayload).Base64Encode()
-		if err != nil {
-			t.Fatal("Failed to base64 encode Payload")
-		}
-		jwsSigningInput := bytes.Join(
-			[][]byte{
+		signingHdr := base64.RawURLEncoding.EncodeToString(hdr)
+		signingPayload := base64.RawURLEncoding.EncodeToString(jwsPayload)
+		jwsSigningInput := strings.Join(
+			[]string{
 				signingHdr,
 				signingPayload,
-			},
-			[]byte{'.'},
+			}, ".",
 		)
-		hashed512 := sha512.Sum512(jwsSigningInput)
+		hashed512 := sha512.Sum512([]byte(jwsSigningInput))
 		ecdsaPrivateKey := key.(*ecdsa.PrivateKey)
 		verified := ecdsa.Verify(&ecdsaPrivateKey.PublicKey, hashed512[:], r, s)
 		if !verified {
@@ -441,7 +363,7 @@ func TestEncode(t *testing.T) {
 		// RS256Compact tests that https://tools.ietf.org/html/rfc7515#appendix-A.2 works
 		const hdr = `{"alg":"RS256"}`
 		const expected = `eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.cC4hiUPoj9Eetdgtv3hF80EGrhuB__dzERat0XF9g2VtQgr9PJbu3XOiZj5RZmh7AAuHIm4Bh-0Qc_lF5YKt_O8W2Fp5jujGbds9uJdbF9CUAr7t1dnZcAcQjbKBYNX4BAynRFdiuB--f_nZLgrnbyTyWzO75vRK5h6xBArLIARNPvkSjtQBMHlb1L07Qe7K0GarZRmB_eSN9383LcOLn6_dO--xi12jzDwusC-eOkHWEsqtFZESc6BfI7noOPqvhJ1phCnvWh6IeYI2w9QOYEUipUTI8np6LbgGY9Fs98rqVt5AXLIhWkWywlVmtVrBp0igcN_IoypGlUPQGe77Rw`
-		const jwksrc = `{
+		const jwkSrc = `{
     "kty":"RSA",
     "n":"ofgWCuLjybRlzo0tZWJjNiuSfb4p4fAkd_wWJcyQoTbji9k0l8W26mPddxHmfHQp-Vaw-4qPCJrcS2mJPMEzP1Pt0Bm4d4QlL-yRT-SFd2lZS-pCgNMsD1W_YpRPEwOWvG6b32690r2jZ47soMZo9wGzjb_7OMg0LOL-bSf63kpaSHSXndS5z5rexMdbBYUsLA9e-KXBdQOS-UTo7WTBEMa2R2CapHg665xsmtdVMTBQY4uDZlxvb3qCo5ZwKh9kG4LT6_I5IhlJH7aGhyxXFvUK-DWNmoudF8NAco9_h9iaGNj8q2ethFkMLs91kzk2PAcDTW9gb54h4FRWyuXpoQ",
     "e":"AQAB",
@@ -453,62 +375,52 @@ func TestEncode(t *testing.T) {
     "qi":"IYd7DHOhrWvxkwPQsRM2tOgrjbcrfvtQJipd-DlcxyVuuM9sQLdgjVk2oy26F0EmpScGLq2MowX7fhd_QJQ3ydy5cY7YIBi87w93IKLEdfnbJtoOPLUW0ITrJReOgo1cq9SbsxYawBgfp_gh6A5603k2-ZQwVK0JKSHuLFkuQ3U"
   }`
 
-		privkey, err := rsautil.PrivateKeyFromJSON([]byte(jwksrc))
-		if !assert.NoError(t, err, "parsing jwk should be successful") {
-			return
+		var jwkKeySet *jwk.Set
+		jwkKeySet, err := jwk.ParseString(jwkSrc)
+		if err != nil {
+			t.Fatalf("Failed to parse JWK: %s", err.Error())
 		}
-
 		signer, err := sign.New(jwa.RS256)
-		if !assert.NoError(t, err, "RsaSign created successfully") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to create signer: %s", err.Error())
 		}
 
-		hdrbuf, err := buffer.Buffer(hdr).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
-		payload, err := buffer.Buffer(examplePayload).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
+		hdrStr := base64.RawURLEncoding.EncodeToString([]byte(hdr))
+		payload := base64.RawURLEncoding.EncodeToString([]byte(examplePayload))
 
-		signingInput := bytes.Join(
-			[][]byte{
-				hdrbuf,
+		signingInput := strings.Join(
+			[]string{
+				hdrStr,
 				payload,
-			},
-			[]byte{'.'},
+			}, ".",
 		)
-		signature, err := signer.Sign(signingInput, privkey)
-		if !assert.NoError(t, err, "PayloadSign is successful") {
-			return
+		privateKey, err := jwkKeySet.Keys[0].Materialize()
+		if err != nil {
+			t.Fatalf("Failed to materialize key: %s", err.Error())
 		}
-		sigbuf, err := buffer.Buffer(signature).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
+		signature, err := signer.Sign([]byte(signingInput), privateKey)
+		if err != nil {
+			t.Fatalf("Failed to sign message: %s", err.Error())
 		}
+		encSignature := base64.RawURLEncoding.EncodeToString(signature)
 
-		encoded := bytes.Join(
-			[][]byte{
+		encoded := strings.Join(
+			[]string{
 				signingInput,
-				sigbuf,
-			},
-			[]byte{'.'},
+				encSignature,
+			}, ".",
 		)
 
-		if !assert.Equal(t, expected, string(encoded), "generated compact serialization should match") {
-			return
+		if expected != encoded {
+			t.Fatal("Mismatched compact serialization")
 		}
 
-		msg, err := jws.Parse(bytes.NewReader(encoded))
-		if !assert.NoError(t, err, "Parsing compact encoded serialization succeeds") {
-			return
+		msg, err := jws.ParseString(encoded)
+		if err != nil {
+			t.Fatalf("Failed to parse JWS: %s", err.Error())
 		}
 
 		signatures := msg.GetSignatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
-			return
-		}
 
 		algorithm := signatures[0].ProtectedHeaders().GetAlgorithm()
 		if algorithm != jwa.RS256 {
@@ -516,18 +428,23 @@ func TestEncode(t *testing.T) {
 		}
 
 		v, err := verify.New(jwa.RS256)
-		if !assert.NoError(t, err, "Verify created") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to create verifier: %s", err.Error())
+		}
+		publicKey, err := jwk.GetPublicKey(privateKey)
+		if err != nil {
+			t.Fatalf("Failed to get public key: %s", err.Error())
 		}
 
-		if !assert.NoError(t, v.Verify(signingInput, signature, &privkey.PublicKey), "Verify succeeds") {
-			return
+		err = v.Verify([]byte(signingInput), signature, publicKey)
+		if err != nil {
+			t.Fatalf("Message verification failed: %s", err.Error())
 		}
 	})
 	t.Run("ES256Compact", func(t *testing.T) {
 		// ES256Compact tests that https://tools.ietf.org/html/rfc7515#appendix-A.3 works
 		const hdr = `{"alg":"ES256"}`
-		const jwksrc = `{
+		const jwkSrc = `{
     "kty":"EC",
     "crv":"P-256",
     "x":"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
@@ -535,62 +452,54 @@ func TestEncode(t *testing.T) {
     "d":"jpsQnnGQmL-YBIffH1136cspYG6-0iY7X1fCE9-E9LI"
   }`
 
-		privkey, err := ecdsautil.PrivateKeyFromJSON([]byte(jwksrc))
-		if !assert.NoError(t, err, "parsing jwk should be successful") {
-			return
+		var jwkKeySet *jwk.Set
+		jwkKeySet, err := jwk.ParseString(jwkSrc)
+		if err != nil {
+			t.Fatalf("Failed to parse JWK: %s", err.Error())
 		}
 
 		signer, err := sign.New(jwa.ES256)
-		if !assert.NoError(t, err, "RsaSign created successfully") {
-			return
+		if err != nil {
+			t.Fatalf("Failed to create signer: %s", err.Error())
 		}
 
-		hdrbuf, err := buffer.Buffer(hdr).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
-		payload, err := buffer.Buffer(examplePayload).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
+		hdrStr := base64.RawURLEncoding.EncodeToString([]byte(hdr))
+		payload := base64.RawURLEncoding.EncodeToString([]byte(examplePayload))
 
-		signingInput := bytes.Join(
-			[][]byte{
-				hdrbuf,
+		signingInput := strings.Join(
+			[]string{
+				hdrStr,
 				payload,
-			},
-			[]byte{'.'},
+			}, ".",
 		)
-		signature, err := signer.Sign(signingInput, privkey)
-		if !assert.NoError(t, err, "PayloadSign is successful") {
-			return
-		}
-		sigbuf, err := buffer.Buffer(signature).Base64Encode()
-		if !assert.NoError(t, err, "base64 encode successful") {
-			return
-		}
 
-		encoded := bytes.Join(
-			[][]byte{
+		privateKey, err := jwkKeySet.Keys[0].Materialize()
+		if err != nil {
+			t.Fatalf("Failed to materialize key: %s", err.Error())
+		}
+		signature, err := signer.Sign([]byte(signingInput), privateKey)
+		if err != nil {
+			t.Fatalf("Failed to sign message: %s", err.Error())
+		}
+		encSignature := base64.RawURLEncoding.EncodeToString(signature)
+
+		encoded := strings.Join(
+			[]string{
 				signingInput,
-				sigbuf,
-			},
-			[]byte{'.'},
+				encSignature,
+			}, ".",
 		)
 
 		// The Signature contains random factor, so unfortunately we can't match
 		// the output against a fixed expected outcome. We'll wave doing an
 		// exact match, and just try to verify using the Signature
 
-		msg, err := jws.Parse(bytes.NewReader(encoded))
-		if !assert.NoError(t, err, "Parsing compact encoded serialization succeeds") {
-			return
+		msg, err := jws.ParseString(encoded)
+		if err != nil {
+			t.Fatalf("Failed to parse JWS: %s", err.Error())
 		}
 
 		signatures := msg.GetSignatures()
-		if !assert.Len(t, signatures, 1, `there should be exactly one Signature`) {
-			return
-		}
 
 		algorithm := signatures[0].ProtectedHeaders().GetAlgorithm()
 		if algorithm != jwa.ES256 {
@@ -598,252 +507,58 @@ func TestEncode(t *testing.T) {
 		}
 
 		v, err := verify.New(jwa.ES256)
-		if !assert.NoError(t, err, "EcdsaVerify created") {
-			return
-		}
-		if !assert.NoError(t, v.Verify(signingInput, signature, &privkey.PublicKey), "Verify succeeds") {
-			return
-		}
-	})
-	t.Run("UnsecuredCompact", func(t *testing.T) {
-		s := `eyJhbGciOiJub25lIn0.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.`
-
-		m, err := jws.Parse(strings.NewReader(s))
 		if err != nil {
-			t.Fatalf("Failed compact serialization parsing: %s", err.Error())
+			t.Fatalf("Failed to create verifier: %s", err.Error())
 		}
-
-		{
-			v := map[string]interface{}{}
-			err := json.Unmarshal(m.GetPayload(), &v)
-			if err != nil {
-				t.Fatalf("Failed to parse Payload: %s", err.Error())
-			}
-			if v["iss"] != "joe" {
-				t.Fatalf("Mismatched iss (%s):(%s)", v["iss"], "joe")
-			}
-			if v["exp"].(float64) != 1300819380 {
-				t.Fatalf("Mismatched exp (%f):(%d)", v["exp"].(float64), 1300819380)
-			}
-			if v["http://example.com/is_root"] != true {
-				t.Fatalf("Mismatched exp (%t):(%t)", v["http://example.com/is_root"], true)
-			}
+		publicKey, err := jwk.GetPublicKey(privateKey)
+		if err != nil {
+			t.Fatalf("Failed to get public key: %s", err.Error())
 		}
-
-		if !assert.Len(t, m.GetSignatures(), 1, "There should be 1 Signature") {
-			return
-		}
-
-		signatures := m.GetSignatures()
-		algorithm := signatures[0].ProtectedHeaders().GetAlgorithm()
-		if algorithm != jwa.NoSignature {
-			t.Fatal("Algorithm in header does not match")
-		}
-
-		if !assert.Empty(t, signatures[0].GetSignature(), "GetSignature should be empty") {
-			return
+		err = v.Verify([]byte(signingInput), signature, publicKey)
+		if err != nil {
+			t.Fatalf("Message verification failed: %s", err.Error())
 		}
 	})
-	t.Run("CompleteJSON", func(t *testing.T) {
-		s := `{
-    "Payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
-    "signatures":[
-      {
-        "header": {"kid":"2010-12-29"},
-        "Protected":"eyJhbGciOiJSUzI1NiJ9",
-        "Signature": "cC4hiUPoj9Eetdgtv3hF80EGrhuB__dzERat0XF9g2VtQgr9PJbu3XOiZj5RZmh7AAuHIm4Bh-0Qc_lF5YKt_O8W2Fp5jujGbds9uJdbF9CUAr7t1dnZcAcQjbKBYNX4BAynRFdiuB--f_nZLgrnbyTyWzO75vRK5h6xBArLIARNPvkSjtQBMHlb1L07Qe7K0GarZRmB_eSN9383LcOLn6_dO--xi12jzDwusC-eOkHWEsqtFZESc6BfI7noOPqvhJ1phCnvWh6IeYI2w9QOYEUipUTI8np6LbgGY9Fs98rqVt5AXLIhWkWywlVmtVrBp0igcN_IoypGlUPQGe77Rw"
-      },
-      {
-        "header": {"kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"},
-        "Protected":"eyJhbGciOiJFUzI1NiJ9",
-        "Signature": "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
-      }
-    ]
-  }`
-
-		m, err := jws.Parse(strings.NewReader(s))
-		if !assert.NoError(t, err, "Unmarshal complete json serialization") {
-			return
-		}
-
-		if !assert.Len(t, m.GetSignatures(), 2, "There should be 2 signatures") {
-			return
-		}
-
-		var sigs []*jws.Signature
-		sigs = m.LookupSignature("2010-12-29")
-		if !assert.Len(t, sigs, 1, "There should be 1 Signature with kid = '2010-12-29'") {
-			return
-		}
-
-		jsonbuf, err := json.Marshal(m)
-		if !assert.NoError(t, err, "Marshal JSON is successful") {
-			return
-		}
-
-		b := &bytes.Buffer{}
-		json.Compact(b, jsonbuf)
-
-		if !assert.Equal(t, b.Bytes(), jsonbuf, "generated json matches") {
-			return
-		}
-	})
-	t.Run("Protected Header lookup", func(t *testing.T) {
-		s := `{
-    "Payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
-    "signatures":[
-      {
-        "header": {"cty":"example"},
-        "Protected":"eyJhbGciOiJFUzI1NiIsImtpZCI6ImU5YmMwOTdhLWNlNTEtNDAzNi05NTYyLWQyYWRlODgyZGIwZCJ9",
-        "Signature": "JcLb1udPAV72TayGv6eawZKlIQQ3K1NzB0fU7wwYoFypGxEczdCQU-V9jp4WwY2ueJKYeE4fF6jigB0PdSKR0Q"
-      }
-    ]
-  }`
-
-		// Protected Header is {"alg":"ES256","kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"}
-		// This Protected header combination forces the parser/unmarshal to go trough the code path to populate and look for Protected header fields.
-		// The Signature is valid.
-
-		m, err := jws.Parse(strings.NewReader(s))
-		if !assert.NoError(t, err, "Unmarshal complete json serialization") {
-			return
-		}
-		if len(m.GetSignatures()) != 1 {
-			t.Fatal("There should be 1 Signature")
-		}
-
-		var sigs []*jws.Signature
-		sigs = m.LookupSignature("e9bc097a-ce51-4036-9562-d2ade882db0d")
-		if !assert.Len(t, sigs, 1, "There should be 1 Signature with kid = '2010-12-29'") {
-			return
-		}
-	})
-	t.Run("FlattenedJSON", func(t *testing.T) {
-		s := `{
-    "Payload": "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
-    "Protected":"eyJhbGciOiJFUzI1NiJ9",
-    "header": {
-      "kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"
-    },
-    "Signature": "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
-  }`
-
-		m, err := jws.Parse(strings.NewReader(s))
-		if !assert.NoError(t, err, "Parsing flattened json serialization") {
-			return
-		}
-
-		if !assert.Len(t, m.GetSignatures(), 1, "There should be 1 Signature") {
-			return
-		}
-	})
-}
-
-/*
-func TestSign_HeaderValues(t *testing.T) {
-	const jwksrc = `{
-    "kty":"EC",
-    "crv":"P-256",
-    "x":"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
-    "y":"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
-    "d":"jpsQnnGQmL-YBIffH1136cspYG6-0iY7X1fCE9-E9LI"
-  }`
-
-	privkey, err := ecdsautil.PrivateKeyFromJSON([]byte(jwksrc))
-	if !assert.NoError(t, err, "parsing jwk should be successful") {
-		return
-	}
-
-	Payload := []byte("Hello, World!")
-
-	hdr := jws.NewHeader()
-	hdr.KeyID = "helloworld01"
-	encoded, err := jws.Sign(Payload, jwa.ES256, privkey, jws.WithPublicHeaders(hdr))
-	if !assert.NoError(t, err, "Sign should succeed") {
-		return
-	}
-
-	// Although we set KeyID to the public header, in compact serialization
-	// there's no difference
-	msg, err := jws.Parse(bytes.NewReader(encoded))
-	if !assert.NoError(t, err, `parse should succeed`) {
-		return
-	}
-
-	if !assert.Equal(t, hdr.KeyID, msg.GetSignatures[0].ProtectedHeader.KeyID, "KeyID should match") {
-		return
-	}
-
-	verified, err := jws.Verify(encoded, jwa.ES256, &privkey.PublicKey)
-	if !assert.NoError(t, err, "Verify should succeed") {
-		return
-	}
-	if !assert.Equal(t, verified, Payload, "GetPayload should match") {
-		return
-	}
-}
-*/
-
-func TestPublicHeaders(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if !assert.NoError(t, err, "GenerateKey should succeed") {
-		return
-	}
-
-	signer, err := sign.New(jwa.RS256)
-	if !assert.NoError(t, err, "rsasign.NewSigner should succeed") {
-		return
-	}
-	_ = signer // TODO
-
-	pubkey := key.PublicKey
-	pubjwk, err := jwk.New(&pubkey)
-	if !assert.NoError(t, err, "NewRsaPublicKey should succeed") {
-		return
-	}
-	_ = pubjwk // TODO
-
-	/*
-		if !assert.NoError(t, signer.UnprotectedHeaders().Set("jwk", pubjwk), "Set('jwk') should succeed") {
-			return
-		}
-	*/
 }
 
 func TestDecode_ES384Compact_NoSigTrim(t *testing.T) {
 	incoming := "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCIsImtpZCI6IjE5MzFmZTQ0YmFhMWNhZTkyZWUzNzYzOTQ0MDU1OGMwODdlMTRlNjk5ZWU5NjVhM2Q1OGU1MmU2NGY4MDE0NWIifQ.eyJpc3MiOiJicmt0LWNsaS0xLjAuN3ByZTEiLCJpYXQiOjE0ODQ2OTU1MjAsImp0aSI6IjgxYjczY2Y3In0.DdFi0KmPHSv4PfIMGcWGMSRLmZsfRPQ3muLFW6Ly2HpiLFFQWZ0VEanyrFV263wjlp3udfedgw_vrBLz3XC8CkbvCo_xeHMzaTr_yfhjoheSj8gWRLwB-22rOnUX_M0A"
-	const jwksrc = `{
+	const jwkSrc = `{
     "kty":"EC",
     "crv":"P-384",
     "x":"YHVZ4gc1RDoqxKm4NzaN_Y1r7R7h3RM3JMteC478apSKUiLVb4UNytqWaLoE6ygH",
     "y":"CRKSqP-aYTIsqJfg_wZEEYUayUR5JhZaS2m4NLk2t1DfXZgfApAJ2lBO0vWKnUMp"
   }`
 
-	pubkey, err := ecdsautil.PublicKeyFromJSON([]byte(jwksrc))
-	if !assert.NoError(t, err, "parsing jwk should be successful") {
-		return
+	var jwkKeySet *jwk.Set
+	jwkKeySet, err := jwk.ParseString(jwkSrc)
+	if err != nil {
+		t.Fatalf("Failed to parse JWK: %s", err.Error())
 	}
 	v, err := verify.New(jwa.ES384)
-	if !assert.NoError(t, err, "EcdsaVerify created") {
-		return
+	if err != nil {
+		t.Fatalf("Failed to create verifier: %s", err.Error())
 	}
 
-	protected, payload, signature, err := jws.SplitCompact(strings.NewReader(incoming))
-	if !assert.NoError(t, err, `jws.SplitCompact should succeed`) {
-		return
+	parts, err := jws.SplitCompact(incoming)
+	if err != nil {
+		t.Fatalf("Failed to spli compact serialization: %s", err.Error())
 	}
 
-	var buf bytes.Buffer
-	buf.Write(protected)
-	buf.WriteByte('.')
-	buf.Write(payload)
-
-	decodedSignature := make([]byte, base64.RawURLEncoding.DecodedLen(len(signature)))
-	if _, err := base64.RawURLEncoding.Decode(decodedSignature, signature); !assert.NoError(t, err, `decoding Signature should succeed`) {
-		return
+	decodedSignature, err := base64.RawURLEncoding.DecodeString(parts[2])
+	if err != nil {
+		t.Fatalf("Failed to decode signature: %s", err.Error())
 	}
+	publicKey, err := jwkKeySet.Keys[0].Materialize()
+	signingInput := strings.Join(
+		[]string{
+			parts[0],
+			parts[1],
+		}, ".",
+	)
 
-	if !assert.NoError(t, v.Verify(buf.Bytes(), decodedSignature, pubkey), "Verify succeeds") {
-		return
+	err = v.Verify([]byte(signingInput), decodedSignature, publicKey)
+	if err != nil {
+		t.Fatalf("Message verification failed: %s", err.Error())
 	}
 }

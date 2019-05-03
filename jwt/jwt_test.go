@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 	"github.com/repenno/jwx-opa/jws"
 	"github.com/repenno/jwx-opa/jwt"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestJWTParse(t *testing.T) {
@@ -31,53 +31,53 @@ func TestJWTParse(t *testing.T) {
 	}
 
 	t.Run("Parse (no signature verification)", func(t *testing.T) {
-		t2, err := jwt.Parse(bytes.NewReader(signed))
-		if !assert.NoError(t, err, `jwt.Parse should succeed`) {
-			return
+		t2, err := jwt.ParseBytes(signed)
+		if err != nil {
+			t.Fatalf("Failed to parse token: %s", err.Error())
 		}
-		if !assert.Equal(t, t1, t2, `t1 == t2`) {
-			return
+		if !reflect.DeepEqual(t1, t2) {
+			t.Fatal("Mismatched token values")
 		}
 	})
 	t.Run("ParseString (no signature verification)", func(t *testing.T) {
 		t2, err := jwt.ParseString(string(signed))
-		if !assert.NoError(t, err, `jwt.ParseString should succeed`) {
-			return
+		if err != nil {
+			t.Fatalf("Failed to parse token: %s", err.Error())
 		}
-		if !assert.Equal(t, t1, t2, `t1 == t2`) {
-			return
+		if !reflect.DeepEqual(t1, t2) {
+			t.Fatal("Mismatched token values")
 		}
 	})
 	t.Run("ParseBytes (no signature verification)", func(t *testing.T) {
 		t2, err := jwt.ParseBytes(signed)
-		if !assert.NoError(t, err, `jwt.ParseBytes should succeed`) {
-			return
+		if err != nil {
+			t.Fatalf("Failed to parse token: %s", err.Error())
 		}
-		if !assert.Equal(t, t1, t2, `t1 == t2`) {
-			return
+		if !reflect.DeepEqual(t1, t2) {
+			t.Fatal("Mismatched token values")
 		}
 	})
 	t.Run("Parse (correct signature key)", func(t *testing.T) {
-		t2, err := jwt.Parse(bytes.NewReader(signed), jwt.WithVerify(alg, &key.PublicKey))
-		if !assert.NoError(t, err, `jwt.Parse should succeed`) {
-			return
+		t2, err := jwt.Parse(string([]byte(signed)), jwt.WithVerify(alg, &key.PublicKey))
+		if err != nil {
+			t.Fatalf("Failed to parse token: %s", err.Error())
 		}
-		if !assert.Equal(t, t1, t2, `t1 == t2`) {
-			return
+		if !reflect.DeepEqual(t1, t2) {
+			t.Fatal("Mismatched token values")
 		}
 	})
 	t.Run("parse (wrong signature algorithm)", func(t *testing.T) {
-		_, err := jwt.Parse(bytes.NewReader(signed), jwt.WithVerify(jwa.RS512, &key.PublicKey))
-		if !assert.Error(t, err, `jwt.Parse should fail`) {
-			return
+		_, err := jwt.Parse(string([]byte(signed)), jwt.WithVerify(jwa.RS512, &key.PublicKey))
+		if err == nil {
+			t.Fatalf("Parsing should fail")
 		}
 	})
 	t.Run("parse (wrong signature key)", func(t *testing.T) {
 		pubkey := key.PublicKey
 		pubkey.E = 0 // bogus value
-		_, err := jwt.Parse(bytes.NewReader(signed), jwt.WithVerify(alg, &pubkey))
-		if !assert.Error(t, err, `jwt.Parse should fail`) {
-			return
+		_, err := jwt.Parse(string([]byte(signed)), jwt.WithVerify(alg, &pubkey))
+		if err == nil {
+			t.Fatalf("Parsing should fail")
 		}
 	})
 }
@@ -85,40 +85,39 @@ func TestJWTParse(t *testing.T) {
 func TestJWTParseVerify(t *testing.T) {
 	alg := jwa.RS256
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if !assert.NoError(t, err, "RSA key generated") {
-		return
+	if err != nil {
+		t.Fatalf("Failed to generate key: %s", err.Error())
 	}
-
 	t1 := jwt.New()
 	signed, err := t1.Sign(alg, key)
 
 	t.Run("parse (no signature verification)", func(t *testing.T) {
-		_, err := jwt.ParseVerify(bytes.NewReader(signed), "", nil)
-		if !assert.Error(t, err, `jwt.ParseVerify should fail`) {
-			return
+		_, err := jwt.ParseVerify(string(signed[:]), "", nil)
+		if err == nil {
+			t.Fatalf("Verificaition should fail")
 		}
 	})
 	t.Run("parse (correct signature key)", func(t *testing.T) {
-		t2, err := jwt.ParseVerify(bytes.NewReader(signed), alg, &key.PublicKey)
-		if !assert.NoError(t, err, `jwt.ParseVerify should succeed`) {
-			return
+		t2, err := jwt.ParseVerify(string(signed[:]), alg, &key.PublicKey)
+		if err != nil {
+			t.Fatalf("Failed to verify jws: %s", err.Error())
 		}
-		if !assert.Equal(t, t1, t2, `t1 == t2`) {
-			return
+		if !reflect.DeepEqual(t1, t2) {
+			t.Fatal("Mismatched token values")
 		}
 	})
 	t.Run("parse (wrong signature algorithm)", func(t *testing.T) {
-		_, err := jwt.ParseVerify(bytes.NewReader(signed), jwa.RS512, &key.PublicKey)
-		if !assert.Error(t, err, `jwt.ParseVerify should fail`) {
-			return
+		_, err := jwt.ParseVerify(string([]byte(signed)), jwa.RS512, &key.PublicKey)
+		if err == nil {
+			t.Fatalf("Verificaition should fail")
 		}
 	})
 	t.Run("parse (wrong signature key)", func(t *testing.T) {
-		pubkey := key.PublicKey
-		pubkey.E = 0 // bogus value
-		_, err := jwt.ParseVerify(bytes.NewReader(signed), alg, &pubkey)
-		if !assert.Error(t, err, `jwt.ParseVerify should fail`) {
-			return
+		pubKey := key.PublicKey
+		pubKey.E = 0 // bogus value
+		_, err := jwt.ParseVerify(string([]byte(signed)), alg, &pubKey)
+		if err == nil {
+			t.Fatalf("Verificaition should fail")
 		}
 	})
 }
@@ -128,7 +127,10 @@ func TestVerifyClaims(t *testing.T) {
 	t.Run(jwt.IssuedAtKey+"+skew", func(t *testing.T) {
 		token := jwt.New()
 		now := time.Now().UTC()
-		token.Set(jwt.IssuedAtKey, now)
+		err := token.Set(jwt.IssuedAtKey, now)
+		if err != nil {
+			t.Fatalf("Failed to set iss: %s", err.Error())
+		}
 
 		const DefaultSkew = 0
 
@@ -137,12 +139,11 @@ func TestVerifyClaims(t *testing.T) {
 			jwt.WithAcceptableSkew(DefaultSkew),
 		}
 
-		if !assert.NoError(t, token.Verify(args...), "token.Verify should validate tokens in the same second they are created") {
-			if now.Equal(token.GetIssuedAt()) {
-				t.Errorf("iat claim failed: iat == now")
-			}
-			return
+		err = token.Verify(args...)
+		if err != nil {
+			t.Fatalf("Token valiadation should succeed in the same second they are created: %s", err.Error())
 		}
+		return
 	})
 }
 
@@ -191,44 +192,44 @@ func TestUnmarshal(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Title, func(t *testing.T) {
 			var token jwt.Token
-			if !assert.NoError(t, json.Unmarshal([]byte(tc.Source), &token), `json.Unmarshal should succeed`) {
-				return
+			err := json.Unmarshal([]byte(tc.Source), &token)
+			if err != nil {
+				t.Fatalf("Failed to unmarshal token")
 			}
-			if !assert.Equal(t, tc.Expected(), &token, `token should match expected value`) {
-				return
+			if !reflect.DeepEqual(tc.Expected(), &token) {
+				t.Fatal("Mismatched token values")
 			}
 
 			var buf bytes.Buffer
-			if !assert.NoError(t, json.NewEncoder(&buf).Encode(token), `json.Marshal should succeed`) {
-				return
+			err = json.NewEncoder(&buf).Encode(token)
+			if err != nil {
+				t.Fatalf("Failed to marshal token: %s", err.Error())
 			}
-			if !assert.Equal(t, tc.ExpectedJSON, strings.TrimSpace(buf.String()), `json should match`) {
-				return
+			if tc.ExpectedJSON != strings.TrimSpace(buf.String()) {
+				t.Fatal("Mismatched JSON values")
 			}
 		})
 	}
 }
 
 func TestGH52(t *testing.T) {
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if !assert.NoError(t, err) {
-		return
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("Failed to generate key: %s", err.Error())
 	}
 
-	pub := &priv.PublicKey
-	if !assert.NoError(t, err) {
-		return
-	}
+	pub := &privateKey.PublicKey
 	for i := 0; i < 1000; i++ {
-		tok := jwt.New()
+		token := jwt.New()
 
-		s, err := tok.Sign(jwa.ES256, priv)
-		if !assert.NoError(t, err) {
-			return
+		s, err := token.Sign(jwa.ES256, privateKey)
+		if err != nil {
+			t.Fatalf("Failed to siggn token: %s", err.Error())
 		}
 
-		if _, err = jws.Verify([]byte(s), jwa.ES256, pub); !assert.NoError(t, err, `test should pass (run %d)`, i) {
-			return
+		_, err = jws.Verify([]byte(s), jwa.ES256, pub)
+		if err != nil {
+			t.Fatalf("Failed to verify token: %s", err.Error())
 		}
 	}
 }
@@ -237,17 +238,17 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	t.Run("Unmarshal audience with multiple values", func(t *testing.T) {
 		var t1 jwt.Token
-		if !assert.NoError(t, json.Unmarshal([]byte(`{"aud":["foo", "bar", "baz"]}`), &t1), `jwt.Parse should succeed`) {
-			return
+		err := json.Unmarshal([]byte(`{"aud":["foo", "bar", "baz"]}`), &t1)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal aud: %s", err.Error())
 		}
 		aud, ok := t1.Get(jwt.AudienceKey)
-		if !assert.True(t, ok, `jwt.Get(jwt.AudienceKey) should succeed`) {
-			t.Logf("%#v", t1)
-			return
+		if !ok {
+			t.Fatal("Failed to get aud")
 		}
 
-		if !assert.Equal(t, aud.([]string), []string{"foo", "bar", "baz"}, "audience should match. got %v", aud) {
-			return
+		if !reflect.DeepEqual(aud.([]string), []string{"foo", "bar", "baz"}) {
+			t.Fatal("Mismatched audience values")
 		}
 	})
 }

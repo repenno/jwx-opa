@@ -1,17 +1,16 @@
 package jwk_test
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/jwk"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -147,41 +146,40 @@ func TestRoundTrip(t *testing.T) {
 	var ks1 jwk.Set
 	for _, tc := range tests {
 		key, err := tc.generate(tc.use, tc.keyID)
-		if !assert.NoError(t, err, `tc.generate should succeed`) {
-			return
+		if err != nil {
+			t.Fatalf("tc.generate should succeed: %s", err.Error())
 		}
 		ks1.Keys = append(ks1.Keys, key)
 	}
 
 	buf, err := json.MarshalIndent(ks1, "", "  ")
-	if !assert.NoError(t, err, "JSON marshal succeeded") {
-		return
+	if err != nil {
+		t.Fatalf("JSON marshal failed: %s", err.Error())
 	}
 
 	ks2, err := jwk.ParseBytes(buf)
-	if !assert.NoError(t, err, "JSON unmarshal succeeded") {
-		t.Logf("%s", buf)
-		return
+	if err != nil {
+		t.Fatalf("JSON marshal failed: %s", err.Error())
 	}
 
 	for _, tc := range tests {
 		keys := ks2.LookupKeyID(tc.keyID)
-		if !assert.Len(t, keys, 1, "Should be 1 key") {
-			return
+		if len(keys) != 1 {
+			t.Fatalf("Failed to lookup Key ID: %s", tc.keyID)
 		}
 		key1 := keys[0]
 
 		keys = ks1.LookupKeyID(tc.keyID)
-		if !assert.Len(t, keys, 1, "Should be 1 key") {
-			return
+		if len(keys) != 1 {
+			t.Fatalf("Failed to lookup Key ID: %s", tc.keyID)
 		}
 
 		key2 := keys[0]
 
 		pk1json, _ := json.Marshal(key1)
 		pk2json, _ := json.Marshal(key2)
-		if !assert.Equal(t, pk1json, pk2json, "Keys should match (kid = %s)", tc.keyID) {
-			return
+		if bytes.Compare(pk1json, pk2json) != 0 {
+			t.Fatalf("Mismatched keys (%s):(%s)", key1.GetKeyID(), key2.GetKeyID())
 		}
 	}
 }
@@ -209,40 +207,13 @@ func TestAppendix(t *testing.T) {
   ]
 }`)
 
-		var jwkKey jwk.Key
-		rawKeySetJSON := &jwk.RawKeySetJSON{}
-		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		var jwkKeySet *jwk.Set
+		jwkKeySet, err := jwk.ParseBytes(jwkSrc)
 		if err != nil {
-			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
+			t.Fatalf("Failed to parse JWK Set: %s", err.Error())
 		}
-		if len(rawKeySetJSON.Keys) == 0 {
-			// It might be a single key
-			rawKeyJSON := &jwk.RawKeyJSON{}
-			err := json.Unmarshal([]byte(jwkSrc), rawKeyJSON)
-			if err != nil {
-				t.Fatalf("Failed to unmarshal JWK: %s", err.Error())
-			}
-			jwkKey, err = rawKeyJSON.GenerateKey()
-			if _, ok := jwkKey.(*jwk.RSAPrivateKey); !ok {
-				t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
-			}
-		} else {
-			rawKeyJSON0 := rawKeySetJSON.Keys[0]
-			jwkKey, err = rawKeyJSON0.GenerateKey()
-			if err != nil {
-				t.Fatalf("Failed to generate key: %s", err.Error())
-			}
-			if _, ok := jwkKey.(*jwk.ECDSAPublicKey); !ok {
-				t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
-			}
-			rawKeyJSON1 := rawKeySetJSON.Keys[1]
-			jwkKey, err = rawKeyJSON1.GenerateKey()
-			if err != nil {
-				t.Fatalf("Failed to generate key: %s", err.Error())
-			}
-			if _, ok := jwkKey.(*jwk.RSAPublicKey); !ok {
-				t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
-			}
+		if len(jwkKeySet.Keys) != 2 {
+			t.Fatalf("Failed to parse JWK Set: %s", err.Error())
 		}
 	})
 }

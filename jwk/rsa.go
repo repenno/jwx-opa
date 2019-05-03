@@ -45,11 +45,6 @@ func newRSAPrivateKey(key *rsa.PrivateKey) (*RSAPrivateKey, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to set Key Type")
 	}
-	// TODO
-	/*	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to set alg")
-		}*/
 	return &RSAPrivateKey{
 		StandardHeaders: &hdr,
 		key:             key,

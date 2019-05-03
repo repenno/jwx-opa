@@ -2,13 +2,9 @@
 package jwk
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"encoding/json"
-	"io"
-	"strings"
-
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/internal/base64"
 	"github.com/repenno/jwx-opa/jwa"
@@ -71,39 +67,49 @@ func (set *Set) UnmarshalJSON(data []byte) error {
 }
 
 // Parse parses JWK from the incoming io.Reader.
-func Parse(in io.Reader) (*Set, error) {
-	m := make(map[string]interface{})
-	if err := json.NewDecoder(in).Decode(&m); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal JWK")
-	}
-
-	// We must change what the underlying structure that gets decoded
-	// out of this JSON is based on parameters within the already parsed
-	// JSON (m). In order to do this, we have to go through the tedious
-	// task of parsing the contents of this map :/
-	if _, ok := m["keys"]; ok {
-		var set Set
-		if err := set.ExtractMap(m); err != nil {
-			return nil, errors.Wrap(err, `failed to extract from map`)
-		}
-		return &set, nil
-	}
-
-	k, err := constructKey(m)
+func Parse(jwkSrc string) (*Set, error) {
+	var jwkKeySet Set
+	var jwkKey Key
+	rawKeySetJSON := &RawKeySetJSON{}
+	err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to construct key from keys`)
+		return nil, errors.Wrap(err, "Failed to unmarshal JWK Set")
 	}
-	return &Set{Keys: []Key{k}}, nil
+	if len(rawKeySetJSON.Keys) == 0 {
+
+		// It might be a single key
+		rawKeyJSON := &RawKeyJSON{}
+		err := json.Unmarshal([]byte(jwkSrc), rawKeyJSON)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to unmarshal JWK")
+		}
+		jwkKey, err = rawKeyJSON.GenerateKey()
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to generate key")
+		}
+		// Add to set
+		jwkKeySet.Keys = append(jwkKeySet.Keys, jwkKey)
+	} else {
+		for i := range rawKeySetJSON.Keys {
+			rawKeyJSON := rawKeySetJSON.Keys[i]
+			jwkKey, err = rawKeyJSON.GenerateKey()
+			if err != nil {
+				return nil, errors.Wrap(err, "Failed to generate key: %s")
+			}
+			jwkKeySet.Keys = append(jwkKeySet.Keys, jwkKey)
+		}
+	}
+	return &jwkKeySet, nil
 }
 
 // ParseBytes parses JWK from the incoming byte buffer.
 func ParseBytes(buf []byte) (*Set, error) {
-	return Parse(bytes.NewReader(buf))
+	return Parse(string(buf[:]))
 }
 
 // ParseString parses JWK from the incoming string.
 func ParseString(s string) (*Set, error) {
-	return Parse(strings.NewReader(s))
+	return Parse(s)
 }
 
 // LookupKeyID looks for keys matching the given key id. Note that the

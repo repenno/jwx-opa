@@ -20,13 +20,10 @@
 package jws
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"strings"
-	"unicode"
 
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/jwa"
@@ -96,16 +93,19 @@ func Sign(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, options .
 		return nil, errors.Wrap(err, `failed to create signer`)
 	}
 
-	hdrs.Set(AlgorithmKey, signer.Algorithm())
+	err = hdrs.Set(AlgorithmKey, signer.Algorithm())
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to set alg value")
+	}
 
-	hdrbuf, err := json.Marshal(hdrs)
+	hdrBuf, err := json.Marshal(hdrs)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to marshal Headers`)
 	}
 
 	var buf bytes.Buffer
 	enc := base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(hdrbuf); err != nil {
+	if _, err := enc.Write(hdrBuf); err != nil {
 		return nil, errors.Wrap(err, `failed to write Headers as base64`)
 	}
 	if err := enc.Close(); err != nil {
@@ -184,7 +184,7 @@ func SignLiteral(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, he
 	return buf.Bytes(), nil
 }
 
-// SignMulti accepts multiple signers via the options parameter,
+/*// SignMulti accepts multiple signers via the options parameter,
 // and creates a JWS in JSON serialization format that contains
 // signatures from applying aforementioned signers.
 func SignMulti(payload []byte, options ...Option) ([]byte, error) {
@@ -234,7 +234,7 @@ func SignMulti(payload []byte, options ...Option) ([]byte, error) {
 	}
 
 	return json.Marshal(result)
-}
+}*/
 
 // Verify checks if the given JWS message is verifiable using `alg` and `key`.
 // If the verification is successful, `err` is nil, and the content of the
@@ -253,71 +253,31 @@ func Verify(buf []byte, alg jwa.SignatureAlgorithm, key interface{}) (ret []byte
 		return nil, errors.New(`attempt to verify empty buffer`)
 	}
 
-	if buf[0] == '{' {
-
-		var v FullEncodedMessage
-		if err := json.Unmarshal(buf, &v); err != nil {
-			return nil, errors.Wrap(err, `failed to unmarshal JWS message`)
-		}
-
-		// There's something wrong if the Message part is not initialized
-		if v.EncodedMessage == nil {
-			return nil, errors.Wrap(err, `invalid JWS message format`)
-		}
-
-		// if we're using the flattened serialization format, then m.GetSignature
-		// will be non-nil
-		msg := v.EncodedMessage
-		if v.EncodedSignature != nil {
-			msg.Signatures[0] = v.EncodedSignature
-		}
-
-		var buf bytes.Buffer
-		for _, sig := range msg.Signatures {
-			buf.Reset()
-			buf.WriteString(sig.Protected)
-			buf.WriteByte('.')
-			buf.WriteString(msg.Payload)
-			decodedSignature, err := base64.RawURLEncoding.DecodeString(sig.Signature)
-			if err != nil {
-				continue
-			}
-
-			if err := verifier.Verify(buf.Bytes(), decodedSignature, key); err == nil {
-				// verified!
-				decodedPayload, err := base64.RawURLEncoding.DecodeString(msg.Payload)
-				if err != nil {
-					return nil, errors.Wrap(err, `message verified, failed to decode Payload`)
-				}
-				return decodedPayload, nil
-			}
-		}
-		return nil, errors.New(`could not verify with any of the signatures`)
-	}
-
-	protected, payload, signature, err := SplitCompact(bytes.NewReader(buf))
+	parts, err := SplitCompact(string(buf[:]))
 	if err != nil {
 		return nil, errors.Wrap(err, `failed extract from compact serialization format`)
 	}
 
-	var verifyBuf bytes.Buffer
-	verifyBuf.Write(protected)
-	verifyBuf.WriteByte('.')
-	verifyBuf.Write(payload)
+	signingInput := strings.Join(
+		[]string{
+			parts[0],
+			parts[1],
+		}, ".",
+	)
 
-	decodedSignature := make([]byte, base64.RawURLEncoding.DecodedLen(len(signature)))
-	if _, err := base64.RawURLEncoding.Decode(decodedSignature, signature); err != nil {
-		return nil, errors.Wrap(err, `failed to decode Signature`)
+	decodedSignature, err := base64.RawURLEncoding.DecodeString(parts[2])
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to decode signature")
 	}
-	if err := verifier.Verify(verifyBuf.Bytes(), decodedSignature, key); err != nil {
-		return nil, errors.Wrap(err, `failed to verify message`)
+	if err := verifier.Verify([]byte(signingInput), decodedSignature, key); err != nil {
+		return nil, errors.Wrap(err, "Failed to verify message")
 	}
 
-	decodedPayload := make([]byte, base64.RawURLEncoding.DecodedLen(len(payload)))
-	if _, err := base64.RawURLEncoding.Decode(decodedPayload, payload); err != nil {
+	if decodedPayload, err := base64.RawURLEncoding.DecodeString(parts[1]); err == nil {
+		return decodedPayload, nil
+	} else {
 		return nil, errors.Wrap(err, `message verified, failed to decode Payload`)
 	}
-	return decodedPayload, nil
 }
 
 // VerifyWithJWK verifies the JWS message using the specified JWK
@@ -359,165 +319,36 @@ func VerifyWithJWKSet(buf []byte, keyset *jwk.Set, keyaccept JWKAcceptFunc) (pay
 	return nil, errors.New("failed to verify with any of the keys")
 }
 
-// Parse parses contents from the given source and creates a jws.Message
-// struct. The input can be in either compact or full JSON serialization.
-func Parse(src io.Reader) (m *Message, err error) {
-
-	rdr := bufio.NewReader(src)
-	var first rune
-	for {
-		r, _, err := rdr.ReadRune()
-		if err != nil {
-			return nil, errors.Wrap(err, `failed to read rune`)
-		}
-		if !unicode.IsSpace(r) {
-			first = r
-			rdr.UnreadRune()
-			break
-		}
-	}
-
-	var parser func(io.Reader) (*Message, error)
-	if first == '{' {
-		parser = parseJSON
-	} else {
-		parser = parseCompact
-	}
-
-	m, err = parser(rdr)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to parse jws message`)
-	}
-
-	return m, nil
+func ParseByte(jwsCompact []byte) (m *Message, err error) {
+	return parseCompact(string(jwsCompact[:]))
 }
 
 // ParseString is the same as Parse, but take in a string
 func ParseString(s string) (*Message, error) {
-	return Parse(strings.NewReader(s))
-}
-
-func parseJSON(src io.Reader) (result *Message, err error) {
-
-	var wrapper FullEncodedMessageUnmarshalProxy
-
-	if err := json.NewDecoder(src).Decode(&wrapper); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal jws message`)
-	}
-
-	if wrapper.EncodedMessageUnmarshalProxy == nil {
-		return nil, errors.New(`invalid Payload (probably empty)`)
-	}
-
-	// if the "Signature" field exist, treat it as a flattened
-	if wrapper.EncodedSignatureUnmarshalProxy != nil {
-		if len(wrapper.Signatures) != 0 {
-			return nil, errors.New("invalid message: mixed flattened/full json serialization")
-		}
-
-		wrapper.Signatures = append(wrapper.Signatures, wrapper.EncodedSignatureUnmarshalProxy)
-	}
-
-	var plain Message
-	plain.Payload, err = base64.RawURLEncoding.DecodeString(wrapper.Payload)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to decode Payload`)
-	}
-
-	for i, sig := range wrapper.Signatures {
-		var plainSig Signature
-
-		plainSig.Headers = sig.Headers
-
-		if l := len(sig.Protected); l > 0 {
-			plainSig.Protected = new(StandardHeaders)
-			hdrbuf, err := base64.RawURLEncoding.DecodeString(sig.Protected)
-			if err != nil {
-				return nil, errors.Wrapf(err, `failed to base64 decode Protected header for Signature #%d`, i+1)
-			}
-			if err := json.Unmarshal(hdrbuf, &plainSig.Protected); err != nil {
-				return nil, errors.Wrapf(err, `failed to unmarshal Protected header for Signature #%d`, i+1)
-			}
-		}
-
-		plainSig.Signature, err = base64.RawURLEncoding.DecodeString(sig.Signature)
-		if err != nil {
-			return nil, errors.Wrapf(err, `failed to decode Signature #%d`, i)
-		}
-
-		plain.Signatures = append(plain.Signatures, &plainSig)
-	}
-
-	return &plain, nil
+	return parseCompact(s)
 }
 
 // SplitCompact splits a JWT and returns its three parts
 // separately: Protected Headers, Payload and Signature.
-func SplitCompact(rdr io.Reader) ([]byte, []byte, []byte, error) {
-	var protected []byte
-	var payload []byte
-	var signature []byte
-	var periods int
-	var state int
+func SplitCompact(jwsCompact string) ([]string, error) {
 
-	buf := make([]byte, 4096)
-	var sofar []byte
-
-	for {
-		n, err := rdr.Read(buf)
-		if n == 0 && err != nil {
-			break
-		}
-
-		sofar = append(sofar, buf[:n]...)
-		for loop := true; loop; {
-			i := bytes.IndexByte(sofar, '.')
-			switch i {
-			case -1:
-				l := len(sofar)
-				if l <= 0 {
-					loop = false
-					continue
-				}
-				i = l
-			default:
-				periods++
-			}
-
-			switch state {
-			case 0:
-				protected = sofar[:i]
-				state++
-			case 1:
-				payload = sofar[:i]
-				state++
-			case 2:
-				signature = sofar[:i]
-			}
-			if len(sofar) <= i {
-				sofar = []byte(nil)
-			} else {
-				sofar = sofar[i+1:]
-			}
-		}
+	parts := strings.Split(jwsCompact, ".")
+	if len(parts) < 3 {
+		return nil, errors.New("Failed to split compact serialization")
 	}
-	if periods != 2 {
-		return nil, nil, nil, errors.New(`invalid number of segments`)
-	}
-
-	return protected, payload, signature, nil
+	return parts, nil
 }
 
 // parseCompact parses a JWS value serialized via compact serialization.
-func parseCompact(rdr io.Reader) (m *Message, err error) {
+func parseCompact(str string) (m *Message, err error) {
 
-	protected, payload, signature, err := SplitCompact(rdr)
+	var decodedHeader, decodedPayload, decodedSignature []byte
+	parts, err := SplitCompact(str)
 	if err != nil {
 		return nil, errors.Wrap(err, `invalid compact serialization format`)
 	}
 
-	decodedHeader := make([]byte, base64.RawURLEncoding.DecodedLen(len(protected)))
-	if _, err := base64.RawURLEncoding.Decode(decodedHeader, protected); err != nil {
+	if decodedHeader, err = base64.RawURLEncoding.DecodeString(parts[0]); err != nil {
 		return nil, errors.Wrap(err, `failed to decode Headers`)
 	}
 	var hdr StandardHeaders
@@ -525,14 +356,14 @@ func parseCompact(rdr io.Reader) (m *Message, err error) {
 		return nil, errors.Wrap(err, `failed to parse JOSE Headers`)
 	}
 
-	decodedPayload := make([]byte, base64.RawURLEncoding.DecodedLen(len(payload)))
-	if _, err = base64.RawURLEncoding.Decode(decodedPayload, payload); err != nil {
+	if decodedPayload, err = base64.RawURLEncoding.DecodeString(parts[1]); err != nil {
 		return nil, errors.Wrap(err, `failed to decode Payload`)
 	}
 
-	decodedSignature := make([]byte, base64.RawURLEncoding.DecodedLen(len(signature)))
-	if _, err := base64.RawURLEncoding.Decode(decodedSignature, signature); err != nil {
-		return nil, errors.Wrap(err, `failed to decode Signature`)
+	if len(parts) > 2 {
+		if decodedSignature, err = base64.RawURLEncoding.DecodeString(parts[2]); err != nil {
+			return nil, errors.Wrap(err, `failed to decode Signature`)
+		}
 	}
 
 	var msg Message

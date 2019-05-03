@@ -2,12 +2,7 @@
 package jwt
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
-	"io/ioutil"
-	"strings"
-
 	"github.com/pkg/errors"
 	"github.com/repenno/jwx-opa/jwa"
 	"github.com/repenno/jwx-opa/jws"
@@ -15,12 +10,12 @@ import (
 
 // ParseString calls Parse with the given string
 func ParseString(s string, options ...Option) (*Token, error) {
-	return Parse(strings.NewReader(s), options...)
+	return Parse(s, options...)
 }
 
 // ParseString calls Parse with the given byte sequence
 func ParseBytes(s []byte, options ...Option) (*Token, error) {
-	return Parse(bytes.NewReader(s), options...)
+	return Parse(string(s[:]), options...)
 }
 
 // Parse parses the JWT token payload and creates a new `jwt.Token` object.
@@ -29,7 +24,7 @@ func ParseBytes(s []byte, options ...Option) (*Token, error) {
 // If the token is signed and you want to verify the payload, you must
 // pass the jwt.WithVerify(alg, key) option. If you do not specify these
 // parameters, no verification will be performed.
-func Parse(src io.Reader, options ...Option) (*Token, error) {
+func Parse(src string, options ...Option) (*Token, error) {
 	var params VerifyParameters
 	for _, o := range options {
 		switch o.Name() {
@@ -42,7 +37,7 @@ func Parse(src io.Reader, options ...Option) (*Token, error) {
 		return ParseVerify(src, params.Algorithm(), params.Key())
 	}
 
-	m, err := jws.Parse(src)
+	m, err := jws.ParseString(src)
 	if err != nil {
 		return nil, errors.Wrap(err, `invalid jws message`)
 	}
@@ -56,13 +51,9 @@ func Parse(src io.Reader, options ...Option) (*Token, error) {
 
 // ParseVerify is a function that is similar to Parse(), but does not
 // allow for parsing without signature verification parameters.
-func ParseVerify(src io.Reader, alg jwa.SignatureAlgorithm, key interface{}) (*Token, error) {
-	data, err := ioutil.ReadAll(src)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to read token from source`)
-	}
+func ParseVerify(src string, alg jwa.SignatureAlgorithm, key interface{}) (*Token, error) {
 
-	v, err := jws.Verify(data, alg, key)
+	v, err := jws.Verify([]byte(src), alg, key)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to verify jws signature`)
 	}
