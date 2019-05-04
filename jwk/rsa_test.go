@@ -214,3 +214,39 @@ func TestRSA(t *testing.T) {
 		verify(t, jwkKey)
 	})
 }
+
+func TestRSAMaterializeErrors(t *testing.T) {
+	t.Run("No Standard Public Key", func(t *testing.T) {
+		rsaPublicKey := &jwk.RSAPublicKey{}
+		_, err := rsaPublicKey.Materialize()
+		if err == nil {
+			t.Fatal("Materialize key should fail")
+		}
+	})
+	t.Run("No Standard Private Key", func(t *testing.T) {
+		rsaPrivateKey := &jwk.RSAPrivateKey{}
+		_, err := rsaPrivateKey.Materialize()
+		if err == nil {
+			t.Fatal("Materialize key should fail")
+		}
+	})
+}
+
+func TestRSAGenerateErrors(t *testing.T) {
+	t.Run("Raw JWK missing D or E", func(t *testing.T) {
+		rawKeyJSON := &jwk.RawKeyJSON{}
+		rsaPublicKey := &jwk.RSAPublicKey{}
+		err := rsaPublicKey.GenerateKey(rawKeyJSON)
+		if err == nil {
+			t.Fatal("Materialize key should fail")
+		}
+	})
+	t.Run("Raw JWK missing D or E", func(t *testing.T) {
+		rawKeyJSON := &jwk.RawKeyJSON{}
+		rsaPrivateKey := &jwk.RSAPrivateKey{}
+		err := rsaPrivateKey.GenerateKey(rawKeyJSON)
+		if err == nil {
+			t.Fatal("Materialize key should fail")
+		}
+	})
+}

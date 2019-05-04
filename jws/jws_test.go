@@ -582,3 +582,44 @@ func TestSign(t *testing.T) {
 		}
 	})
 }
+
+func TestSignErrors(t *testing.T) {
+	t.Run("Invalid signature algorithm", func(t *testing.T) {
+		_, err := jws.SignLiteral([]byte("payload"), jwa.SignatureAlgorithm("dummy"), nil, []byte("header"))
+		if err == nil {
+			t.Fatal("JWS signing should have failed")
+		}
+	})
+	t.Run("Invalid signature algorithm", func(t *testing.T) {
+		_, err := jws.SignLiteral([]byte("payload"), jwa.SignatureAlgorithm("dummy"), nil, []byte("header"))
+		if err == nil {
+			t.Fatal("JWS signing should have failed")
+		}
+	})
+}
+
+func TestVerifyErrors(t *testing.T) {
+
+	t.Run("Invalid compact serialization", func(t *testing.T) {
+		message := []byte("some.message")
+		_, err := jws.Verify(message, jwa.ES256, nil)
+		if err == nil {
+			t.Fatal("JWS verification should have failed")
+		}
+	})
+	t.Run("Invalid signature encoding", func(t *testing.T) {
+		message := []byte("some.message.c29tZSBtZXNz?Wdl")
+		_, err := jws.Verify(message, jwa.ES256, nil)
+		if err == nil {
+			t.Fatal("JWS verification should have failed")
+		}
+	})
+	t.Run("Invalid Key", func(t *testing.T) {
+		rsaPublicKey := &jwk.RSAPublicKey{}
+		_, err := jws.VerifyWithJWK([]byte("some.message.signed"), rsaPublicKey)
+		if err == nil {
+			t.Fatal("JWS verification should have failed")
+		}
+	})
+
+}
