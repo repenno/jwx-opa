@@ -17,7 +17,6 @@ const (
 )
 
 type Headers interface {
-	Remove(string)
 	Get(string) (interface{}, bool)
 	Set(string, interface{}) error
 	Walk(func(string, interface{}) error) error
@@ -36,10 +35,6 @@ type StandardHeaders struct {
 	KeyType       jwa.KeyType             `json:"kty,omitempty"`           // https://tools.ietf.org/html/rfc7517#section-4.1
 	KeyUsage      string                  `json:"use,omitempty"`           // https://tools.ietf.org/html/rfc7517#section-4.2
 	PrivateParams map[string]interface{}  `json:"privateParams,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.4
-}
-
-func (h *StandardHeaders) Remove(s string) {
-	delete(h.PrivateParams, s)
 }
 
 func (h *StandardHeaders) GetAlgorithm() jwa.SignatureAlgorithm {

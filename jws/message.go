@@ -19,27 +19,3 @@ func (m Message) GetPayload() []byte {
 func (m Message) GetSignatures() []*Signature {
 	return m.Signatures
 }
-
-// LookupSignature looks up a particular Signature entry using
-// the `kid` value
-func (m Message) LookupSignature(kid string) []*Signature {
-	var sigs []*Signature
-	for _, sig := range m.Signatures {
-		if hdr := sig.PublicHeaders(); hdr != nil {
-			hdrKeyId, ok := hdr.Get(KeyIDKey)
-			if ok && hdrKeyId == kid {
-				sigs = append(sigs, sig)
-				continue
-			}
-		}
-
-		if hdr := sig.ProtectedHeaders(); hdr != nil {
-			hdrKeyId, ok := hdr.Get(KeyIDKey)
-			if ok && hdrKeyId == kid {
-				sigs = append(sigs, sig)
-				continue
-			}
-		}
-	}
-	return sigs
-}

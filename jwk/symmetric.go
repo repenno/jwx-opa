@@ -6,19 +6,11 @@ import (
 )
 
 func newSymmetricKey(key []byte) (*SymmetricKey, error) {
-	if len(key) == 0 {
-		return nil, errors.New(`non-empty []byte key required`)
-	}
 	var hdr StandardHeaders
 
 	err := hdr.Set(KeyTypeKey, jwa.OctetSeq)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to set Key Type")
-	}
-	// everything starts with 'none' signature
-	err = hdr.Set(AlgorithmKey, jwa.NoSignature)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to set alg")
 	}
 	return &SymmetricKey{
 		StandardHeaders: &hdr,

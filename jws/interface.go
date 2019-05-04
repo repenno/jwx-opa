@@ -52,7 +52,7 @@ type PayloadSigner interface {
 // signed payloads with. You should only use this when you want to actually
 // want to programmatically view the contents for the full JWS Payload.
 //
-// To sign and verify, use the appropriate `Sign()` nad `Verify()` functions
+// To sign and verify, use the appropriate `SignWithOption()` nad `Verify()` functions
 type Message struct {
 	Payload    []byte       `json:"payload"`
 	Signatures []*Signature `json:"signatures,omitempty"`

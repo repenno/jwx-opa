@@ -81,7 +81,7 @@ func TestRoundTrip(t *testing.T) {
 	hmacAlgorithms := []jwa.SignatureAlgorithm{jwa.HS256, jwa.HS384, jwa.HS512}
 	for _, alg := range hmacAlgorithms {
 		t.Run("HMAC "+alg.String(), func(t *testing.T) {
-			signed, err := jws.Sign(payload, alg, sharedKey)
+			signed, err := jws.SignWithOption(payload, alg, sharedKey)
 			if err != nil {
 				t.Fatalf("Failed to sign input: %s", err.Error())
 			}
@@ -110,7 +110,7 @@ func TestVerifyWithJWKSet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to set alg: %s", err.Error())
 	}
-	signature, err := jws.Sign(payload, jwa.RS256, key)
+	signature, err := jws.SignWithOption(payload, jwa.RS256, key)
 	if err != nil {
 		t.Fatalf("Failed to sign message: %s", err.Error())
 	}
@@ -138,7 +138,7 @@ func TestRoundtrip_RSACompact(t *testing.T) {
 			t.Fatalf("Failed to generate key: %s", err.Error())
 		}
 
-		buf, err := jws.Sign(payload, alg, key)
+		buf, err := jws.SignWithOption(payload, alg, key)
 		if err != nil {
 			t.Fatalf("Failed to sign message: %s", err.Error())
 		}
@@ -315,7 +315,7 @@ func TestEncode(t *testing.T) {
 			t.Fatal("Failed to create private key")
 		}
 		var jwsCompact []byte
-		jwsCompact, err = jws.Sign(jwsPayload, alg, key)
+		jwsCompact, err = jws.SignWithOption(jwsPayload, alg, key)
 		if err != nil {
 			t.Fatal("Failed to sign message")
 		}

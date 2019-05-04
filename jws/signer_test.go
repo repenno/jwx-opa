@@ -9,15 +9,15 @@ import (
 
 func TestSign(t *testing.T) {
 	t.Run("Bad algorithm", func(t *testing.T) {
-		_, err := jws.Sign([]byte(nil), jwa.SignatureAlgorithm("FooBar"), nil)
+		_, err := jws.SignWithOption([]byte(nil), jwa.SignatureAlgorithm("FooBar"), nil)
 		if err == nil {
 			t.Fatal("Unknown algorithm should return error")
 		}
 	})
 	t.Run("No private key", func(t *testing.T) {
-		_, err := jws.Sign([]byte{'a', 'b', 'c'}, jwa.RS256, nil)
+		_, err := jws.SignWithOption([]byte{'a', 'b', 'c'}, jwa.RS256, nil)
 		if err == nil {
-			t.Fatal("Sign with no private key should return error")
+			t.Fatal("SignWithOption with no private key should return error")
 		}
 	})
 	t.Run("RSA verify with no public key", func(t *testing.T) {

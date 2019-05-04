@@ -4,14 +4,14 @@
 // If you do not care about the details, the only things that you
 // would need to use are the following functions:
 //
-//     jws.Sign(Payload, algorithm, key)
+//     jws.SignWithOption(Payload, algorithm, key)
 //     jws.Verify(encodedjws, algorithm, key)
 //
-// To sign, simply use `jws.Sign`. `Payload` is a []byte buffer that
+// To sign, simply use `jws.SignWithOption`. `Payload` is a []byte buffer that
 // contains whatever data you want to sign. `alg` is one of the
 // jwa.SignatureAlgorithm constants from package jwa. For RSA and
 // ECDSA family of algorithms, you will need to prepare a private key.
-// For HMAC family, you just need a []byte value. The `jws.Sign`
+// For HMAC family, you just need a []byte value. The `jws.SignWithOption`
 // function will return the encoded JWS message on success.
 //
 // To verify, use `jws.Verify`. It will parse the `encodedjws` buffer
@@ -31,25 +31,6 @@ import (
 	"github.com/repenno/jwx-opa/jws/sign"
 	"github.com/repenno/jwx-opa/jws/verify"
 )
-
-// Sign is a short way to generate a JWS in compact serialization
-// for a given Payload. If you need more control over the Signature
-// generation process, you should manually create signers and tweak
-// the message.
-/*
-func Sign(Payload []byte, alg jwa.SignatureAlgorithm, key interface{}, options ...Option) ([]byte, error) {
-	signer, err := sign.New(alg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create signer")
-	}
-
-	msg, err := SignMulti(Payload, WithSigner(signer, key))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to sign Payload")
-	}
-	return msg, nil
-}
-*/
 
 type payloadSigner struct {
 	signer    sign.Signer
@@ -74,35 +55,11 @@ func (s *payloadSigner) PublicHeader() Headers {
 	return s.public
 }
 
-// Sign generates a Signature for the given Payload, and serializes
+// SignLiteral generates a Signature for the given Payload and Headers, and serializes
 // it in compact serialization format. In this format you may NOT use
 // multiple signers.
 //
-// If you would like to pass custom Headers, use the WithHeaders option.
-func Sign(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, options ...Option) ([]byte, error) {
-	var hdrs Headers = &StandardHeaders{}
-	for _, o := range options {
-		switch o.Name() {
-		case optkeyHeaders:
-			hdrs = o.Value().(Headers)
-		}
-	}
-
-	signer, err := sign.New(alg)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to create signer`)
-	}
-
-	err = hdrs.Set(AlgorithmKey, signer.Algorithm())
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to set alg value")
-	}
-
-	hdrBuf, err := json.Marshal(hdrs)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to marshal Headers`)
-	}
-
+func SignLiteral(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, hdrBuf []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := base64.NewEncoder(base64.RawURLEncoding, &buf)
 	if _, err := enc.Write(hdrBuf); err != nil {
@@ -121,52 +78,11 @@ func Sign(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, options .
 		return nil, errors.Wrap(err, `failed to finalize writing Payload as base64`)
 	}
 
-	signature, err := signer.Sign(buf.Bytes(), key)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to sign Payload`)
-	}
-
-	buf.WriteByte('.')
-	enc = base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(signature); err != nil {
-		return nil, errors.Wrap(err, `failed to write Signature as base64`)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, errors.Wrap(err, `failed to finalize writing Signature as base64`)
-	}
-
-	return buf.Bytes(), nil
-}
-
-// SignLiteral generates a Signature for the given Payload and Headers, and serializes
-// it in compact serialization format. In this format you may NOT use
-// multiple signers.
-//
-func SignLiteral(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, headers []byte) ([]byte, error) {
-
 	signer, err := sign.New(alg)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create signer`)
 	}
 
-	var buf bytes.Buffer
-	enc := base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(headers); err != nil {
-		return nil, errors.Wrap(err, `failed to write Headers as base64`)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, errors.Wrap(err, `failed to finalize writing Headers as base64`)
-	}
-
-	buf.WriteByte('.')
-	enc = base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(payload); err != nil {
-		return nil, errors.Wrap(err, `failed to write Payload as base64`)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, errors.Wrap(err, `failed to finalize writing Payload as base64`)
-	}
-
 	signature, err := signer.Sign(buf.Bytes(), key)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to sign Payload`)
@@ -184,57 +100,31 @@ func SignLiteral(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, he
 	return buf.Bytes(), nil
 }
 
-/*// SignMulti accepts multiple signers via the options parameter,
-// and creates a JWS in JSON serialization format that contains
-// signatures from applying aforementioned signers.
-func SignMulti(payload []byte, options ...Option) ([]byte, error) {
-	var signers []PayloadSigner
+// SignWithOption generates a Signature for the given Payload, and serializes
+// it in compact serialization format. In this format you may NOT use
+// multiple signers.
+//
+// If you would like to pass custom Headers, use the WithHeaders option.
+func SignWithOption(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, options ...Option) ([]byte, error) {
+	var headers Headers = &StandardHeaders{}
 	for _, o := range options {
 		switch o.Name() {
-		case optkeyPayloadSigner:
-			signers = append(signers, o.Value().(PayloadSigner))
+		case optkeyHeaders:
+			headers = o.Value().(Headers)
 		}
 	}
 
-	if len(signers) == 0 {
-		return nil, errors.New(`no signers provided`)
+	err := headers.Set(AlgorithmKey, alg)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to set alg value")
 	}
 
-	var result EncodedMessage
-
-	result.Payload = base64.RawURLEncoding.EncodeToString(payload)
-
-	for _, signer := range signers {
-		protected := signer.ProtectedHeader()
-		if protected == nil {
-			protected = &StandardHeaders{}
-		}
-
-		protected.Set(AlgorithmKey, signer.Algorithm())
-
-		hdrbuf, err := json.Marshal(protected)
-		if err != nil {
-			return nil, errors.Wrap(err, `failed to marshal Headers`)
-		}
-		encodedHeader := base64.RawURLEncoding.EncodeToString(hdrbuf)
-		var buf bytes.Buffer
-		buf.WriteString(encodedHeader)
-		buf.WriteByte('.')
-		buf.WriteString(result.Payload)
-		signature, err := signer.Sign(buf.Bytes())
-		if err != nil {
-			return nil, errors.Wrap(err, `failed to sign Payload`)
-		}
-
-		result.Signatures = append(result.Signatures, &EncodedSignature{
-			Headers:   signer.PublicHeader(),
-			Protected: encodedHeader,
-			Signature: base64.RawURLEncoding.EncodeToString(signature),
-		})
+	hdrBuf, err := json.Marshal(headers)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to marshal Headers`)
 	}
-
-	return json.Marshal(result)
-}*/
+	return SignLiteral(payload, alg, key, hdrBuf)
+}
 
 // Verify checks if the given JWS message is verifiable using `alg` and `key`.
 // If the verification is successful, `err` is nil, and the content of the
@@ -283,16 +173,11 @@ func Verify(buf []byte, alg jwa.SignatureAlgorithm, key interface{}) (ret []byte
 // VerifyWithJWK verifies the JWS message using the specified JWK
 func VerifyWithJWK(buf []byte, key jwk.Key) (payload []byte, err error) {
 
-	keyval, err := key.Materialize()
+	keyVal, err := key.Materialize()
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to materialize jwk.Key`)
 	}
-
-	payload, err = Verify(buf, key.GetAlgorithm(), keyval)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to verify message")
-	}
-	return payload, nil
+	return Verify(buf, key.GetAlgorithm(), keyVal)
 }
 
 // VerifyWithJWKSet verifies the JWS message using JWK key set.

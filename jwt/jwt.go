@@ -70,7 +70,7 @@ func New() *Token {
 	return &Token{}
 }
 
-// Sign is a convenience function to create a signed JWT token serialized in
+// SignWithOption is a convenience function to create a signed JWT token serialized in
 // compact form. `key` must match the key type required by the given
 // signature method `method`
 func (t *Token) Sign(method jwa.SignatureAlgorithm, key interface{}) ([]byte, error) {
@@ -86,7 +86,7 @@ func (t *Token) Sign(method jwa.SignatureAlgorithm, key interface{}) ([]byte, er
 	if hdr.Set(`typ`, `JWT`) != nil {
 		return nil, errors.Wrap(err, `failed to sign payload`)
 	}
-	sign, err := jws.Sign(buf, method, key, jws.WithHeaders(&hdr))
+	sign, err := jws.SignWithOption(buf, method, key, jws.WithHeaders(&hdr))
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to sign payload`)
 	}

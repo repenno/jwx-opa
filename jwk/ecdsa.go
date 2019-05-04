@@ -52,7 +52,7 @@ func (k *ECDSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 	var x, y big.Int
 
 	if keyJSON.X == nil || keyJSON.Y == nil || keyJSON.Crv == "" {
-		return errors.Errorf("Missing parameters to generate key")
+		return errors.Errorf("Missing mandatory key parameters X, Y or Crv")
 	}
 
 	x.SetBytes(keyJSON.X.Bytes())
@@ -84,7 +84,7 @@ func (k *ECDSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 func (k *ECDSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	if keyJSON.D == nil {
-		return errors.Errorf(`Missing key parameter`)
+		return errors.Errorf("Missing mandatory key parameter D")
 	}
 	eCDSAPublicKey := &ECDSAPublicKey{}
 	err := eCDSAPublicKey.GenerateKey(keyJSON)

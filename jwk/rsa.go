@@ -51,7 +51,7 @@ func (k *RSAPrivateKey) Materialize() (interface{}, error) {
 func (k *RSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	if keyJSON.N == nil || keyJSON.E == nil {
-		return errors.Errorf("Missing mandatory key parameters")
+		return errors.Errorf("Missing mandatory key parameters N or E")
 	}
 	rsaPublicKey := &rsa.PublicKey{
 		N: (&big.Int{}).SetBytes(keyJSON.N.Bytes()),
@@ -71,7 +71,7 @@ func (k *RSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
 	}
 
 	if keyJSON.D == nil || keyJSON.P == nil || keyJSON.Q == nil {
-		return errors.Errorf("Missing mandatory key parameters")
+		return errors.Errorf("Missing mandatory key parameters D, P or Q")
 	}
 	privateKey := &rsa.PrivateKey{
 		PublicKey: *rsaPublicKey.key,
