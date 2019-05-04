@@ -93,7 +93,20 @@ func (k *ECDSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
 	if err != nil {
 		return errors.Wrap(err, `failed to generate public key`)
 	}
-
+	dBytes := keyJSON.D.Bytes()
+	// The length of this octet string MUST be ceiling(log-base-2(n)/8)
+	// octets (where n is the order of the curve). This is because the private
+	// key d must be in the interval [1, n-1] so the bitlength of d should be
+	// no larger than the bitlength of n-1. The easiest way to find the octet
+	// length is to take bitlength(n-1), add 7 to force a carry, and shift this
+	// bit sequence right by 3, which is essentially dividing by 8 and adding
+	// 1 if there is any remainder. Thus, the private key value d should be
+	// output to (bitlength(n-1)+7)>>3 octets.
+	n := eCDSAPublicKey.key.Params().N
+	octetLength := (new(big.Int).Sub(n, big.NewInt(1)).BitLen() + 7) >> 3
+	if octetLength-len(dBytes) != 0 {
+		return errors.Errorf("Failed to generate private key. Incorrect D value")
+	}
 	privateKey := &ecdsa.PrivateKey{
 		PublicKey: *eCDSAPublicKey.key,
 		D:         (&big.Int{}).SetBytes(keyJSON.D.Bytes()),

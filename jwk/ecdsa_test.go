@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"github.com/repenno/jwx-opa/buffer"
 	"reflect"
 	"testing"
 
@@ -15,6 +16,44 @@ import (
 )
 
 func TestECDSA(t *testing.T) {
+	t.Run("Key Generation Errors", func(t *testing.T) {
+		jwkSrc := `{"keys":
+       [
+         {"kty":"EC",
+          "crv":"P-256",
+          "key_ops": ["verify"],
+          "x":"MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+          "y":"4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
+          "d":"870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
+				 }
+       ]
+  }`
+
+		rawKeySetJSON := &jwk.RawKeySetJSON{}
+		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
+		}
+		if len(rawKeySetJSON.Keys) != 1 {
+			t.Fatalf("Failed to parse JWK Set: %s", err.Error())
+		}
+		rawKeyJSON := rawKeySetJSON.Keys[0]
+		curveName := rawKeyJSON.Crv
+		if curveName != "P-256" {
+			t.Fatalf("Curve name should be P-256, not: %s ", curveName)
+		}
+		rawKeyJSON.Crv = jwa.EllipticCurveAlgorithm("dummy")
+		_, err = rawKeyJSON.GenerateKey()
+		if err == nil {
+			t.Fatal("Key generation should fail")
+		}
+		rawKeyJSON.Crv = jwa.EllipticCurveAlgorithm("P-256")
+		rawKeyJSON.D = buffer.Buffer("1234")
+		_, err = rawKeyJSON.GenerateKey()
+		if err == nil {
+			t.Fatal("Key generation should fail")
+		}
+	})
 	t.Run("Parse Private Key", func(t *testing.T) {
 		jwkSrc := `{"keys":
        [
@@ -27,15 +66,9 @@ func TestECDSA(t *testing.T) {
 				 }
        ]
   }`
-		// Heuristics for parsing Set and single keys
-		// TODO
-		rawKeyJson := &jwk.RawKeyJSON{}
-		err := json.Unmarshal([]byte(jwkSrc), rawKeyJson)
-		if err != nil {
-			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
-		}
+
 		rawKeySetJSON := &jwk.RawKeySetJSON{}
-		err = json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
 		}
