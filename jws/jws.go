@@ -37,44 +37,30 @@ import (
 // multiple signers.
 //
 func SignLiteral(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, hdrBuf []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(hdrBuf); err != nil {
-		return nil, errors.Wrap(err, `failed to write Headers as base64`)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, errors.Wrap(err, `failed to finalize writing Headers as base64`)
-	}
-
-	buf.WriteByte('.')
-	enc = base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(payload); err != nil {
-		return nil, errors.Wrap(err, `failed to write Payload as base64`)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, errors.Wrap(err, `failed to finalize writing Payload as base64`)
-	}
-
+	encodedHdr := base64.RawURLEncoding.EncodeToString(hdrBuf)
+	encodedPayload := base64.RawURLEncoding.EncodeToString(payload)
+	signingInput := strings.Join(
+		[]string{
+			encodedHdr,
+			encodedPayload,
+		}, ".",
+	)
 	signer, err := sign.New(alg)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create signer`)
 	}
-
-	signature, err := signer.Sign(buf.Bytes(), key)
+	signature, err := signer.Sign([]byte(signingInput), key)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to sign Payload`)
 	}
-
-	buf.WriteByte('.')
-	enc = base64.NewEncoder(base64.RawURLEncoding, &buf)
-	if _, err := enc.Write(signature); err != nil {
-		return nil, errors.Wrap(err, `failed to write Signature as base64`)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, errors.Wrap(err, `failed to finalize writing Signature as base64`)
-	}
-
-	return buf.Bytes(), nil
+	encodedSignature := base64.RawURLEncoding.EncodeToString(signature)
+	compactSerialization := strings.Join(
+		[]string{
+			signingInput,
+			encodedSignature,
+		}, ".",
+	)
+	return []byte(compactSerialization), nil
 }
 
 // SignWithOption generates a Signature for the given Payload, and serializes
@@ -143,7 +129,7 @@ func Verify(buf []byte, alg jwa.SignatureAlgorithm, key interface{}) (ret []byte
 	if decodedPayload, err := base64.RawURLEncoding.DecodeString(parts[1]); err == nil {
 		return decodedPayload, nil
 	}
-	return nil, errors.Wrap(err, `message verified, failed to decode Payload`)
+	return nil, errors.Wrap(err, "Failed to decode Payload")
 }
 
 // VerifyWithJWK verifies the JWS message using the specified JWK
@@ -151,7 +137,7 @@ func VerifyWithJWK(buf []byte, key jwk.Key) (payload []byte, err error) {
 
 	keyVal, err := key.Materialize()
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to materialize jwk.Key`)
+		return nil, errors.Wrap(err, "Failed to materialize key")
 	}
 	return Verify(buf, key.GetAlgorithm(), keyVal)
 }
@@ -163,13 +149,11 @@ func VerifyWithJWK(buf []byte, key jwk.Key) (payload []byte, err error) {
 func VerifyWithJWKSet(buf []byte, keyset *jwk.Set) (payload []byte, err error) {
 
 	for _, key := range keyset.Keys {
-
 		payload, err := VerifyWithJWK(buf, key)
 		if err == nil {
 			return payload, nil
 		}
 	}
-
 	return nil, errors.New("failed to verify with any of the keys")
 }
 
