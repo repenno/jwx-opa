@@ -12,7 +12,7 @@ func TestHMACVerify(t *testing.T) {
 	}
 	dummy := &dummyStruct{1, 3.4}
 	t.Run("HMAC Verifier Creation Error", func(t *testing.T) {
-		_, err := newHMAC(jwa.ES256)
+		_, err := newHMAC(jwa.NoValue)
 		if err == nil {
 			t.Fatal("HMAC Verifier Object creation should fail")
 		}

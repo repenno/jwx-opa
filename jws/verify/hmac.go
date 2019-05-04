@@ -8,10 +8,7 @@ import (
 )
 
 func newHMAC(alg jwa.SignatureAlgorithm) (*HMACVerifier, error) {
-	_, ok := sign.HMACSignFuncs[alg]
-	if !ok {
-		return nil, errors.Errorf(`unsupported algorithm while trying to create HMAC signer: %s`, alg)
-	}
+
 	s, err := sign.New(alg)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to generate HMAC signer`)
