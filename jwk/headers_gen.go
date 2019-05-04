@@ -20,8 +20,6 @@ type Headers interface {
 	Remove(string)
 	Get(string) (interface{}, bool)
 	Set(string, interface{}) error
-	PopulateMap(map[string]interface{}) error
-	ExtractMap(map[string]interface{}) error
 	Walk(func(string, interface{}) error) error
 	GetAlgorithm() jwa.SignatureAlgorithm
 	GetKeyID() string
@@ -159,85 +157,6 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 		}
 		h.PrivateParams[name] = value
 	}
-	return nil
-}
-
-// PopulateMap populates a map with appropriate values that represent
-// the headers as a JSON object. This exists primarily because JWKs are
-// represented as flat objects instead of differentiating the different
-// parts of the message in separate sub objects.
-func (h StandardHeaders) PopulateMap(m map[string]interface{}) error {
-	for k, v := range h.PrivateParams {
-		m[k] = v
-	}
-	if v, ok := h.Get(AlgorithmKey); ok {
-		m[AlgorithmKey] = v
-	}
-	if v, ok := h.Get(KeyIDKey); ok {
-		m[KeyIDKey] = v
-	}
-	if v, ok := h.Get(KeyOpsKey); ok {
-		m[KeyOpsKey] = v
-	}
-	if v, ok := h.Get(KeyTypeKey); ok {
-		m[KeyTypeKey] = v
-	}
-	if v, ok := h.Get(KeyUsageKey); ok {
-		m[KeyUsageKey] = v
-	}
-	if v, ok := h.Get(PrivateParamsKey); ok {
-		m[PrivateParamsKey] = v
-	}
-
-	return nil
-}
-
-// ExtractMap populates the appropriate values from a map that represent
-// the headers as a JSON object. This exists primarily because JWKs are
-// represented as flat objects instead of differentiating the different
-// parts of the message in separate sub objects.
-func (h *StandardHeaders) ExtractMap(m map[string]interface{}) (err error) {
-	if v, ok := m[AlgorithmKey]; ok {
-		if err := h.Set(AlgorithmKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, AlgorithmKey)
-		}
-		delete(m, AlgorithmKey)
-	}
-	if v, ok := m[KeyIDKey]; ok {
-		if err := h.Set(KeyIDKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, KeyIDKey)
-		}
-		delete(m, KeyIDKey)
-	}
-	if v, ok := m[KeyOpsKey]; ok {
-		if err := h.Set(KeyOpsKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, KeyOpsKey)
-		}
-		delete(m, KeyOpsKey)
-	}
-	if v, ok := m[KeyTypeKey]; ok {
-		if err := h.Set(KeyTypeKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, KeyTypeKey)
-		}
-		delete(m, KeyTypeKey)
-	}
-	if v, ok := m[KeyUsageKey]; ok {
-		if err := h.Set(KeyUsageKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, KeyUsageKey)
-		}
-		delete(m, KeyUsageKey)
-	}
-	if v, ok := m[PrivateParamsKey]; ok {
-		if err := h.Set(PrivateParamsKey, v); err != nil {
-			return errors.Wrapf(err, `failed to set value for key %s`, PrivateParamsKey)
-		}
-		delete(m, PrivateParamsKey)
-	}
-	// Fix: A nil map is different from a empty map as far as deep.equal is concerned
-	if len(m) > 0 {
-		h.PrivateParams = m
-	}
-
 	return nil
 }
 

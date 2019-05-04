@@ -80,31 +80,6 @@ func TestHeader(t *testing.T) {
 			t.Fatalf("KeyOps should be empty string")
 		}
 	})
-	t.Run("ExtractMapError", func(t *testing.T) {
-
-		type dummyStruct struct {
-			dummy1 int
-			dummy2 float64
-		}
-		dummy := &dummyStruct{1, 3.4}
-		values := map[string]interface{}{
-			jwk.AlgorithmKey: dummy,
-			jwk.KeyIDKey:     dummy,
-			jwk.KeyTypeKey:   dummy,
-			jwk.KeyUsageKey:  dummy,
-			jwk.KeyOpsKey:    dummy,
-		}
-
-		var h jwk.StandardHeaders
-		for k, _ := range values {
-			err := h.ExtractMap(values)
-			if err == nil {
-				t.Fatalf("Extracting %s value should have failed", k)
-			}
-			delete(values, k)
-		}
-	})
-
 	t.Run("Algorithm", func(t *testing.T) {
 		var h jwk.StandardHeaders
 		for _, value := range []interface{}{jwa.RS256, jwa.ES256} {
