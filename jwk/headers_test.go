@@ -10,12 +10,14 @@ import (
 )
 
 func TestHeader(t *testing.T) {
+	privateHeaderParams := map[string]interface{}{"one": "1", "two": "11"}
 	t.Run("Roundtrip", func(t *testing.T) {
 		values := map[string]interface{}{
-			jwk.KeyIDKey:    "helloworld01",
-			jwk.KeyTypeKey:  jwa.RSA,
-			jwk.KeyOpsKey:   jwk.KeyOperationList{jwk.KeyOpSign},
-			jwk.KeyUsageKey: "sig",
+			jwk.KeyIDKey:         "helloworld01",
+			jwk.KeyTypeKey:       jwa.RSA,
+			jwk.KeyOpsKey:        jwk.KeyOperationList{jwk.KeyOpSign},
+			jwk.KeyUsageKey:      "sig",
+			jwk.PrivateParamsKey: privateHeaderParams,
 		}
 
 		var h jwk.StandardHeaders
@@ -46,11 +48,12 @@ func TestHeader(t *testing.T) {
 		}
 		dummy := &dummyStruct{1, 3.4}
 		values := map[string]interface{}{
-			jwk.AlgorithmKey: dummy,
-			jwk.KeyIDKey:     dummy,
-			jwk.KeyTypeKey:   dummy,
-			jwk.KeyUsageKey:  dummy,
-			jwk.KeyOpsKey:    dummy,
+			jwk.AlgorithmKey:     dummy,
+			jwk.KeyIDKey:         dummy,
+			jwk.KeyTypeKey:       dummy,
+			jwk.KeyUsageKey:      dummy,
+			jwk.KeyOpsKey:        dummy,
+			jwk.PrivateParamsKey: dummy,
 		}
 
 		var h jwk.StandardHeaders
