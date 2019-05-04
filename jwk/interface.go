@@ -71,10 +71,6 @@ type RawKeySetJSON struct {
 	Keys []RawKeyJSON `json:"keys"`
 }
 
-/*type headers interface {
-	Headers
-}*/
-
 // RSAPublicKey is a type of JWK generated from RSA public keys
 type RSAPublicKey struct {
 	*StandardHeaders
