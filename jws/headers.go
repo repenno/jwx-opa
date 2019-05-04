@@ -98,7 +98,7 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	}
 }
 
-// set is a general setter function for StandardHeaders structure
+// Set is a general setter function for StandardHeaders structure
 func (h *StandardHeaders) Set(name string, value interface{}) error {
 	switch name {
 	case AlgorithmKey:

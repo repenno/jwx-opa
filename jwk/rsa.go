@@ -34,6 +34,7 @@ func newRSAPrivateKey(key *rsa.PrivateKey) (*RSAPrivateKey, error) {
 	}, nil
 }
 
+// Materialize returns the standard RSA Public Key representation stored in the internal representation
 func (k *RSAPublicKey) Materialize() (interface{}, error) {
 	if k.key == nil {
 		return nil, errors.New(`key has no rsa.PublicKey associated with it`)
@@ -41,6 +42,7 @@ func (k *RSAPublicKey) Materialize() (interface{}, error) {
 	return k.key, nil
 }
 
+// Materialize returns the standard RSA Private Key representation stored in the internal representation
 func (k *RSAPrivateKey) Materialize() (interface{}, error) {
 	if k.key == nil {
 		return nil, errors.New(`key has no rsa.PrivateKey associated with it`)
@@ -48,6 +50,7 @@ func (k *RSAPrivateKey) Materialize() (interface{}, error) {
 	return k.key, nil
 }
 
+// GenerateKey creates a RSAPublicKey from a RawKeyJSON
 func (k *RSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	if keyJSON.N == nil || keyJSON.E == nil {
@@ -62,6 +65,7 @@ func (k *RSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 	return nil
 }
 
+// GenerateKey creates a RSAPublicKey from a RawKeyJSON
 func (k *RSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	rsaPublicKey := &RSAPublicKey{}

@@ -37,6 +37,7 @@ type StandardHeaders struct {
 	PrivateParams map[string]interface{}  `json:"privateParams,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.4
 }
 
+// GetAlgorithm is a convenience function to retrieve the corresponding value stored in the StandardHeaders
 func (h *StandardHeaders) GetAlgorithm() jwa.SignatureAlgorithm {
 	if v := h.Algorithm; v != nil {
 		return *v
@@ -44,26 +45,32 @@ func (h *StandardHeaders) GetAlgorithm() jwa.SignatureAlgorithm {
 	return jwa.NoValue
 }
 
+// GetKeyID is a convenience function to retrieve the corresponding value stored in the StandardHeaders
 func (h *StandardHeaders) GetKeyID() string {
 	return h.KeyID
 }
 
+// GetKeyOps is a convenience function to retrieve the corresponding value stored in the StandardHeaders
 func (h *StandardHeaders) GetKeyOps() KeyOperationList {
 	return h.KeyOps
 }
 
+// GetKeyType is a convenience function to retrieve the corresponding value stored in the StandardHeaders
 func (h *StandardHeaders) GetKeyType() jwa.KeyType {
 	return h.KeyType
 }
 
+// GetKeyUsage is a convenience function to retrieve the corresponding value stored in the StandardHeaders
 func (h *StandardHeaders) GetKeyUsage() string {
 	return h.KeyUsage
 }
 
+// GetPrivateParams is a convenience function to retrieve the corresponding value stored in the StandardHeaders
 func (h *StandardHeaders) GetPrivateParams() map[string]interface{} {
 	return h.PrivateParams
 }
 
+// Get is a general getter function for JWK StandardHeaders structure
 func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	switch name {
 	case AlgorithmKey:
@@ -109,6 +116,7 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	}
 }
 
+// Set is a general getter function for JWK StandardHeaders structure
 func (h *StandardHeaders) Set(name string, value interface{}) error {
 	switch name {
 	case AlgorithmKey:
@@ -155,6 +163,7 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 	return nil
 }
 
+// Walk iterates over all JWK standard headers fields while applying a function to its value.
 func (h StandardHeaders) Walk(f func(string, interface{}) error) error {
 	for _, key := range []string{AlgorithmKey, KeyIDKey, KeyOpsKey, KeyTypeKey, KeyUsageKey, PrivateParamsKey} {
 		if v, ok := h.Get(key); ok {

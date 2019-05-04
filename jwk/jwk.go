@@ -101,6 +101,7 @@ func ParseString(s string) (*Set, error) {
 	return parse(s)
 }
 
+// GenerateKey creates an internal representation of a key from a raw JWK JSON
 func (r *RawKeyJSON) GenerateKey() (Key, error) {
 
 	var key Key
