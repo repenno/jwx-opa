@@ -2,12 +2,13 @@ package jwk_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/repenno/jwx-opa/internal/base64"
-	"github.com/repenno/jwx-opa/jwk"
 	"reflect"
 	"testing"
+
+	"github.com/repenno/jwx-opa/jwk"
 )
 
 func TestSymmetric(t *testing.T) {
@@ -18,11 +19,11 @@ func TestSymmetric(t *testing.T) {
 			key2 = `AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow`
 		)
 
-		buf1, err := base64.DecodeString(key1)
+		buf1, err := base64.RawURLEncoding.DecodeString(key1)
 		if err != nil {
 			t.Fatalf("Failed to decode key1: %s", err.Error())
 		}
-		buf2, err := base64.DecodeString(key2)
+		buf2, err := base64.RawURLEncoding.DecodeString(key2)
 		if err != nil {
 			t.Fatalf("Failed to decode key2: %s", err.Error())
 		}
