@@ -37,6 +37,7 @@ type Token struct {
 	PrivateClaims map[string]interface{} `json:"privateClaims,omitempty"` // https://tools.ietf.org/html/rfc7515#section-4.1.4
 }
 
+// Get is a generic getter for Token structure
 func (t *Token) Get(s string) (interface{}, bool) {
 	switch s {
 	case AudienceKey:
@@ -47,39 +48,33 @@ func (t *Token) Get(s string) (interface{}, bool) {
 	case ExpirationKey:
 		if t.Expiration == nil {
 			return nil, false
-		} else {
-			return t.Expiration.Get(), true
 		}
+		return t.Expiration.Get(), true
 	case IssuedAtKey:
 		if t.IssuedAt == nil {
 			return nil, false
-		} else {
-			return t.IssuedAt.Get(), true
 		}
+		return t.IssuedAt.Get(), true
 	case IssuerKey:
 		if t.Issuer == nil {
 			return nil, false
-		} else {
-			return *(t.Issuer), true
 		}
+		return *(t.Issuer), true
 	case JwtIDKey:
 		if t.JwtID == nil {
 			return nil, false
-		} else {
-			return *(t.JwtID), true
 		}
+		return *(t.JwtID), true
 	case NotBeforeKey:
 		if t.NotBefore == nil {
 			return nil, false
-		} else {
-			return t.NotBefore.Get(), true
 		}
+		return t.NotBefore.Get(), true
 	case SubjectKey:
 		if t.Subject == nil {
 			return nil, false
-		} else {
-			return *(t.Subject), true
 		}
+		return *(t.Subject), true
 	case PrivateClaimsKey:
 	}
 	if v, ok := t.PrivateClaims[s]; ok {
@@ -88,6 +83,7 @@ func (t *Token) Get(s string) (interface{}, bool) {
 	return nil, false
 }
 
+// Set is a generic setter for Token structure
 func (t *Token) Set(name string, v interface{}) error {
 	switch name {
 	case AudienceKey:
@@ -142,6 +138,8 @@ func (t *Token) Set(name string, v interface{}) error {
 	return nil
 }
 
+// GetAudience is a convenience function to retrieve the corresponding value store in the token
+// if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
 func (t Token) GetAudience() StringList {
 	if v, ok := t.Get(AudienceKey); ok {
 		return v.([]string)
@@ -149,6 +147,8 @@ func (t Token) GetAudience() StringList {
 	return nil
 }
 
+// GetExpiration is a convenience function to retrieve the corresponding value store in the token
+// if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
 func (t Token) GetExpiration() time.Time {
 	if v, ok := t.Get(ExpirationKey); ok {
 		return v.(time.Time)
@@ -156,6 +156,8 @@ func (t Token) GetExpiration() time.Time {
 	return time.Time{}
 }
 
+// GetIssuedAt is a convenience function to retrieve the corresponding value store in the token
+// if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
 func (t Token) GetIssuedAt() time.Time {
 	if v, ok := t.Get(IssuedAtKey); ok {
 		return v.(time.Time)
@@ -163,9 +165,8 @@ func (t Token) GetIssuedAt() time.Time {
 	return time.Time{}
 }
 
-// Issuer is a convenience function to retrieve the corresponding value store in the token
+// GetIssuer is a convenience function to retrieve the corresponding value store in the token
 // if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
-
 func (t Token) GetIssuer() string {
 	if v, ok := t.Get(IssuerKey); ok {
 		return v.(string)
@@ -173,9 +174,8 @@ func (t Token) GetIssuer() string {
 	return ""
 }
 
-// JwtID is a convenience function to retrieve the corresponding value store in the token
+// GetJwtID is a convenience function to retrieve the corresponding value store in the token
 // if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
-
 func (t Token) GetJwtID() string {
 	if v, ok := t.Get(JwtIDKey); ok {
 		return v.(string)
@@ -183,6 +183,8 @@ func (t Token) GetJwtID() string {
 	return ""
 }
 
+// GetNotBefore is a convenience function to retrieve the corresponding value store in the token
+// if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
 func (t Token) GetNotBefore() time.Time {
 	if v, ok := t.Get(NotBeforeKey); ok {
 		return v.(time.Time)
@@ -190,9 +192,8 @@ func (t Token) GetNotBefore() time.Time {
 	return time.Time{}
 }
 
-// Subject is a convenience function to retrieve the corresponding value store in the token
+// GetSubject is a convenience function to retrieve the corresponding value store in the token
 // if there is a problem retrieving the value, the zero value is returned. If you need to differentiate between existing/non-existing values, use `Get` instead
-
 func (t Token) GetSubject() string {
 	if v, ok := t.Get(SubjectKey); ok {
 		return v.(string)
@@ -204,11 +205,13 @@ func (t Token) GetSubject() string {
 // to avoid having to remove the trailing newline for each successive
 // call to Encode()
 func writeJSON(buf *bytes.Buffer, v interface{}, keyName string) error {
-	if enc, err := json.Marshal(v); err != nil {
+
+	var enc []byte
+	var err error
+	if enc, err = json.Marshal(v); err != nil {
 		return errors.Wrapf(err, `failed to encode '%s'`, keyName)
-	} else {
-		buf.Write(enc)
 	}
+	buf.Write(enc)
 	return nil
 }
 

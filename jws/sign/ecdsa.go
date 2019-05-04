@@ -63,19 +63,21 @@ func newECDSA(alg jwa.SignatureAlgorithm) (*ECDSASigner, error) {
 	}, nil
 }
 
+// Algorithm returns the signer algorithm
 func (s ECDSASigner) Algorithm() jwa.SignatureAlgorithm {
 	return s.alg
 }
 
+// Sign signs payload with a ECDSA private key
 func (s ECDSASigner) Sign(payload []byte, key interface{}) ([]byte, error) {
 	if key == nil {
 		return nil, errors.New(`missing private key while signing payload`)
 	}
 
-	ecdsakey, ok := key.(*ecdsa.PrivateKey)
+	privateKey, ok := key.(*ecdsa.PrivateKey)
 	if !ok {
 		return nil, errors.Errorf(`invalid key type %T. *ecdsa.PrivateKey is required`, key)
 	}
 
-	return s.sign(payload, ecdsakey)
+	return s.sign(payload, privateKey)
 }

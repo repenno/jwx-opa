@@ -13,7 +13,7 @@ func ParseString(s string, options ...Option) (*Token, error) {
 	return Parse(s, options...)
 }
 
-// ParseString calls Parse with the given byte sequence
+// ParseBytes calls Parse with the given byte sequence
 func ParseBytes(s []byte, options ...Option) (*Token, error) {
 	return Parse(string(s[:]), options...)
 }
@@ -70,7 +70,7 @@ func New() *Token {
 	return &Token{}
 }
 
-// SignWithOption is a convenience function to create a signed JWT token serialized in
+// Sign is a convenience function to create a signed JWT token serialized in
 // compact form. `key` must match the key type required by the given
 // signature method `method`
 func (t *Token) Sign(method jwa.SignatureAlgorithm, key interface{}) ([]byte, error) {

@@ -142,9 +142,8 @@ func Verify(buf []byte, alg jwa.SignatureAlgorithm, key interface{}) (ret []byte
 
 	if decodedPayload, err := base64.RawURLEncoding.DecodeString(parts[1]); err == nil {
 		return decodedPayload, nil
-	} else {
-		return nil, errors.Wrap(err, `message verified, failed to decode Payload`)
 	}
+	return nil, errors.Wrap(err, `message verified, failed to decode Payload`)
 }
 
 // VerifyWithJWK verifies the JWS message using the specified JWK
@@ -174,11 +173,12 @@ func VerifyWithJWKSet(buf []byte, keyset *jwk.Set) (payload []byte, err error) {
 	return nil, errors.New("failed to verify with any of the keys")
 }
 
+// ParseByte parses a JWS value serialized via compact serialization and provided as []byte.
 func ParseByte(jwsCompact []byte) (m *Message, err error) {
 	return parseCompact(string(jwsCompact[:]))
 }
 
-// ParseString is the same as Parse, but take in a string
+// ParseString parses a JWS value serialized via compact serialization and provided as string.
 func ParseString(s string) (*Message, error) {
 	return parseCompact(s)
 }

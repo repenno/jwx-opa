@@ -73,14 +73,15 @@ func newRSA(alg jwa.SignatureAlgorithm) (*RSAVerifier, error) {
 	}, nil
 }
 
+// Verify checks if a JWS is valid.
 func (v RSAVerifier) Verify(payload, signature []byte, key interface{}) error {
 	if key == nil {
 		return errors.New(`missing public key while verifying payload`)
 	}
-	rsakey, ok := key.(*rsa.PublicKey)
+	rsaKey, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return errors.Errorf(`invalid key type %T. *rsa.PublicKey is required`, key)
 	}
 
-	return v.verify(payload, signature, rsakey)
+	return v.verify(payload, signature, rsaKey)
 }

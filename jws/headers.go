@@ -1,4 +1,3 @@
-// This file is auto-generated. DO NOT EDIT
 package jws
 
 import (
@@ -6,6 +5,7 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 )
 
+// Constants for JWS Common parameters
 const (
 	AlgorithmKey     = "alg"
 	ContentTypeKey   = "cty"
@@ -17,12 +17,14 @@ const (
 	TypeKey          = "typ"
 )
 
+// Headers provides a common interface for common header parameters
 type Headers interface {
 	Get(string) (interface{}, bool)
 	Set(string, interface{}) error
 	GetAlgorithm() jwa.SignatureAlgorithm
 }
 
+// StandardHeaders contains JWS common parameters.
 type StandardHeaders struct {
 	Algorithm     jwa.SignatureAlgorithm `json:"alg,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.1
 	ContentType   string                 `json:"cty,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.10
@@ -34,10 +36,12 @@ type StandardHeaders struct {
 	Type          string                 `json:"typ,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.9
 }
 
+// GetAlgorithm returns algorithm
 func (h *StandardHeaders) GetAlgorithm() jwa.SignatureAlgorithm {
 	return h.Algorithm
 }
 
+// Get is a general getter function for StandardHeaders structure
 func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	switch name {
 	case AlgorithmKey:
@@ -94,6 +98,7 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 	}
 }
 
+// set is a general setter function for StandardHeaders structure
 func (h *StandardHeaders) Set(name string, value interface{}) error {
 	switch name {
 	case AlgorithmKey:

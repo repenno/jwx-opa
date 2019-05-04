@@ -47,6 +47,7 @@ func (k ECDSAPrivateKey) Materialize() (interface{}, error) {
 	return k.key, nil
 }
 
+// // GenerateKey creates a ECDSAPublicKey from JWK format
 func (k *ECDSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	var x, y big.Int
@@ -81,6 +82,7 @@ func (k *ECDSAPublicKey) GenerateKey(keyJSON *RawKeyJSON) error {
 	return nil
 }
 
+// GenerateKey creates a ECDSAPrivateKey from JWK format
 func (k *ECDSAPrivateKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	if keyJSON.D == nil {

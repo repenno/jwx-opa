@@ -3,7 +3,6 @@ package jwk
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"errors"
 	"github.com/repenno/jwx-opa/jwa"
 )
 
@@ -19,17 +18,13 @@ const (
 	ForEncryption KeyUsageType = "enc"
 )
 
-// Errors related to JWK
-var (
-	ErrInvalidHeaderName  = errors.New("invalid header name")
-	ErrInvalidHeaderValue = errors.New("invalid value for header key")
-	ErrUnsupportedKty     = errors.New("unsupported kty")
-	ErrUnsupportedCurve   = errors.New("unsupported curve")
-)
-
+// KeyOperation is used to denote the allowed operations for a Key
 type KeyOperation string
+
+// KeyOperationList represents an slice of KeyOperation
 type KeyOperationList []KeyOperation
 
+// KeyOperation constants
 const (
 	KeyOpSign       KeyOperation = "sign"       // (compute digital signature or MAC)
 	KeyOpVerify                  = "verify"     // (verify digital signature or MAC)
@@ -62,11 +57,13 @@ type Key interface {
 	GenerateKey(*RawKeyJSON) error
 }
 
+// RawKeyJSON is generic type that represents any kind JWK
 type RawKeyJSON struct {
 	StandardHeaders
 	jwa.AlgorithmParameters
 }
 
+// RawKeySetJSON is generic type that represents a JWK Set
 type RawKeySetJSON struct {
 	Keys []RawKeyJSON `json:"keys"`
 }

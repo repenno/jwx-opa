@@ -76,6 +76,7 @@ func newRSA(alg jwa.SignatureAlgorithm) (*RSASigner, error) {
 	}, nil
 }
 
+// Algorithm returns the signer algorithm
 func (s RSASigner) Algorithm() jwa.SignatureAlgorithm {
 	return s.alg
 }

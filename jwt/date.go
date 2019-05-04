@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Get returns time in time.Time struct format
 func (n *NumericDate) Get() time.Time {
 	if n == nil {
 		return (time.Time{}).UTC()
@@ -40,6 +41,7 @@ func numericToTime(v interface{}, t *time.Time) bool {
 	return true
 }
 
+// Accept process and converts input time to internal NumericDate format
 func (n *NumericDate) Accept(v interface{}) error {
 	var t time.Time
 
