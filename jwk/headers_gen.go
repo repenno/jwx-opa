@@ -128,15 +128,15 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 			h.KeyID = v
 			return nil
 		}
-		return errors.Errorf(`invalid value for %s key: %T`, KeyIDKey, value)
+		return errors.Errorf("invalid value for %s key: %T", KeyIDKey, value)
 	case KeyOpsKey:
 		if err := h.KeyOps.Accept(value); err != nil {
-			return errors.Wrapf(err, `invalid value for %s key`, KeyOpsKey)
+			return errors.Wrapf(err, "invalid value for %s key", KeyOpsKey)
 		}
 		return nil
 	case KeyTypeKey:
 		if err := h.KeyType.Accept(value); err != nil {
-			return errors.Wrapf(err, `invalid value for %s key`, KeyTypeKey)
+			return errors.Wrapf(err, "invalid value for %s key", KeyTypeKey)
 		}
 		return nil
 	case KeyUsageKey:
@@ -144,13 +144,13 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 			h.KeyUsage = v
 			return nil
 		}
-		return errors.Errorf(`invalid value for %s key: %T`, KeyUsageKey, value)
+		return errors.Errorf("invalid value for %s key: %T", KeyUsageKey, value)
 	case PrivateParamsKey:
 		if v, ok := value.(map[string]interface{}); ok {
 			h.PrivateParams = v
 			return nil
 		}
-		return errors.Errorf(`invalid value for %s key: %T`, PrivateParamsKey, value)
+		return errors.Errorf("invalid value for %s key: %T", PrivateParamsKey, value)
 	default:
 		if h.PrivateParams == nil {
 			h.PrivateParams = map[string]interface{}{}

@@ -2,7 +2,6 @@ package jws
 
 import (
 	"github.com/repenno/jwx-opa/jwa"
-	"github.com/repenno/jwx-opa/jwk"
 )
 
 type EncodedSignature struct {
@@ -64,28 +63,3 @@ type Signature struct {
 	Protected Headers `json:"Protected,omitempty"` // Protected Headers
 	Signature []byte  `json:"signature,omitempty"` // GetSignature
 }
-
-// JWKAcceptor decides which keys can be accepted
-// by functions that iterate over a JWK key set.
-type JWKAcceptor interface {
-	Accept(jwk.Key) bool
-}
-
-// JWKAcceptFunc is an implementation of JWKAcceptor
-// using a plain function
-type JWKAcceptFunc func(jwk.Key) bool
-
-// Accept executes the provided function to determine if the
-// given key can be used
-func (f JWKAcceptFunc) Accept(key jwk.Key) bool {
-	return f(key)
-}
-
-// DefaultJWKAcceptor is the default acceptor that is used
-// in functions like VerifyWithJWKSet
-var DefaultJWKAcceptor = JWKAcceptFunc(func(key jwk.Key) bool {
-	if u := key.GetKeyUsage(); u != "" && u != "enc" && u != "sig" {
-		return false
-	}
-	return true
-})

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/repenno/jwx-opa/internal/base64"
 	"github.com/repenno/jwx-opa/jwk"
+	"reflect"
 	"testing"
 )
 
@@ -78,4 +79,42 @@ func TestSymmetric(t *testing.T) {
 			t.Fatalf("Mismatched key values %s:%s", realizedKey1.([]byte), buf1)
 		}
 	})
+	t.Run("Test New Key", func(t *testing.T) {
+
+		var jwkSrc = []byte(`{
+  "keys": [
+    {
+      "kty": "oct",
+      "kid": "HMAC key used in JWS spec Appendix A.1 example",
+      "k": "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow"
+    }
+  ]
+}`)
+		rawKeySetJSON := &jwk.RawKeySetJSON{}
+		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
+		}
+		rawKeyJSON0 := rawKeySetJSON.Keys[0]
+		jwkKey0, err := rawKeyJSON0.GenerateKey()
+		if err != nil {
+			t.Fatalf("Failed to generate key: %s", err.Error())
+		}
+		realizedKey0, err := jwkKey0.Materialize()
+		if err != nil {
+			t.Fatalf("Failed to materialize key: %s", err.Error())
+		}
+		jwkKey1, err := jwk.New(realizedKey0)
+		if err != nil {
+			t.Fatalf("Failed to create new symmetric key: %s", err.Error())
+		}
+		realizedKey1, err := jwkKey1.Materialize()
+		if err != nil {
+			t.Fatalf("Failed to materialize key: %s", err.Error())
+		}
+		if !reflect.DeepEqual(realizedKey1, realizedKey0) {
+			t.Fatalf("Mismatched symmetric keys")
+		}
+	})
+
 }

@@ -56,8 +56,7 @@ func New(key interface{}) (Key, error) {
 	}
 }
 
-// Parse parses JWK from the incoming io.Reader.
-func Parse(jwkSrc string) (*Set, error) {
+func parse(jwkSrc string) (*Set, error) {
 	var jwkKeySet Set
 	var jwkKey Key
 	rawKeySetJSON := &RawKeySetJSON{}
@@ -94,12 +93,12 @@ func Parse(jwkSrc string) (*Set, error) {
 
 // ParseBytes parses JWK from the incoming byte buffer.
 func ParseBytes(buf []byte) (*Set, error) {
-	return Parse(string(buf[:]))
+	return parse(string(buf[:]))
 }
 
 // ParseString parses JWK from the incoming string.
 func ParseString(s string) (*Set, error) {
-	return Parse(s)
+	return parse(s)
 }
 
 func (r *RawKeyJSON) GenerateKey() (Key, error) {

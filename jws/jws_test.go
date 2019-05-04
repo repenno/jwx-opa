@@ -115,7 +115,7 @@ func TestVerifyWithJWKSet(t *testing.T) {
 		t.Fatalf("Failed to sign message: %s", err.Error())
 	}
 
-	verified, err := jws.VerifyWithJWKSet(signature, &jwk.Set{Keys: []jwk.Key{jwkKey}}, nil)
+	verified, err := jws.VerifyWithJWKSet(signature, &jwk.Set{Keys: []jwk.Key{jwkKey}})
 	if err != nil {
 		t.Fatalf("Failed to verify with JWKSet: %s", err.Error())
 	}

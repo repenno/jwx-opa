@@ -10,9 +10,6 @@ import (
 )
 
 func newECDSAPublicKey(key *ecdsa.PublicKey) (*ECDSAPublicKey, error) {
-	if key == nil {
-		return nil, errors.New(`non-nil ecdsa.PublicKey required`)
-	}
 
 	var hdr StandardHeaders
 	err := hdr.Set(KeyTypeKey, jwa.EC)
@@ -27,9 +24,6 @@ func newECDSAPublicKey(key *ecdsa.PublicKey) (*ECDSAPublicKey, error) {
 }
 
 func newECDSAPrivateKey(key *ecdsa.PrivateKey) (*ECDSAPrivateKey, error) {
-	if key == nil {
-		return nil, errors.New(`non-nil ecdsa.PrivateKey required`)
-	}
 
 	var hdr StandardHeaders
 	err := hdr.Set(KeyTypeKey, jwa.EC)
@@ -41,10 +35,6 @@ func newECDSAPrivateKey(key *ecdsa.PrivateKey) (*ECDSAPrivateKey, error) {
 		StandardHeaders: &hdr,
 		key:             key,
 	}, nil
-}
-
-func (k ECDSAPrivateKey) PublicKey() (*ECDSAPublicKey, error) {
-	return newECDSAPublicKey(&k.key.PublicKey)
 }
 
 // Materialize returns the EC-DSA public key represented by this JWK

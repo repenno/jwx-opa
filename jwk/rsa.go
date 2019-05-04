@@ -9,9 +9,6 @@ import (
 )
 
 func newRSAPublicKey(key *rsa.PublicKey) (*RSAPublicKey, error) {
-	if key == nil {
-		return nil, errors.New(`non-nil rsa.PublicKey required`)
-	}
 
 	var hdr StandardHeaders
 	err := hdr.Set(KeyTypeKey, jwa.RSA)
@@ -25,13 +22,6 @@ func newRSAPublicKey(key *rsa.PublicKey) (*RSAPublicKey, error) {
 }
 
 func newRSAPrivateKey(key *rsa.PrivateKey) (*RSAPrivateKey, error) {
-	if key == nil {
-		return nil, errors.New(`non-nil rsa.PrivateKey required`)
-	}
-
-	if len(key.Primes) < 2 {
-		return nil, errors.New("two primes required for RSA private key")
-	}
 
 	var hdr StandardHeaders
 	err := hdr.Set(KeyTypeKey, jwa.RSA)
@@ -42,10 +32,6 @@ func newRSAPrivateKey(key *rsa.PrivateKey) (*RSAPrivateKey, error) {
 		StandardHeaders: &hdr,
 		key:             key,
 	}, nil
-}
-
-func (k RSAPrivateKey) PublicKey() (*RSAPublicKey, error) {
-	return newRSAPublicKey(&k.key.PublicKey)
 }
 
 func (k *RSAPublicKey) Materialize() (interface{}, error) {
