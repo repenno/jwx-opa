@@ -1,7 +1,6 @@
 package jwk_test
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -123,7 +122,6 @@ func TestECDSA(t *testing.T) {
     }
   ]
 }`
-		expectedPublicKeyBytes := []byte{123, 34, 99, 114, 118, 34, 58, 34, 80, 45, 50, 53, 54, 34, 44, 34, 107, 116, 121, 34, 58, 34, 69, 67, 34, 44, 34, 120, 34, 58, 34, 77, 75, 66, 67, 84, 78, 73, 99, 75, 85, 83, 68, 105, 105, 49, 49, 121, 83, 115, 51, 53, 50, 54, 105, 68, 90, 56, 65, 105, 84, 111, 55, 84, 117, 54, 75, 80, 65, 113, 118, 55, 68, 52, 34, 44, 34, 121, 34, 58, 34, 52, 69, 116, 108, 54, 83, 82, 87, 50, 89, 105, 76, 85, 114, 78, 53, 118, 102, 118, 86, 72, 117, 104, 112, 55, 120, 56, 80, 120, 108, 116, 109, 87, 87, 108, 98, 98, 77, 52, 73, 70, 121, 77, 34, 125}
 
 		rawKeySetJSON := &jwk.RawKeySetJSON{}
 		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
@@ -160,27 +158,15 @@ func TestECDSA(t *testing.T) {
 		if err != nil {
 			t.Fatal("Failed to create ECDSAPublicKey")
 		}
-		// verify marshal
-		pubKeyBytes, err := json.Marshal(eCDSAPublicKey)
+		newPublicKey, err := eCDSAPublicKey.Materialize()
 		if err != nil {
-			t.Fatal("Failed to marshal ECDSAPublicKey")
+			t.Fatalf("Failed to materialize key: %s", err.Error())
 		}
-		if bytes.Compare(pubKeyBytes, expectedPublicKeyBytes) != 0 {
-			t.Fatal("Expected and created ECDSA Public Keys do not match")
-		}
-
-		// verify unmarshal
-		eCDSAPublicKey2 := &jwk.ECDSAPublicKey{}
-		err = json.Unmarshal(expectedPublicKeyBytes, eCDSAPublicKey2)
-		if err != nil {
-			t.Fatal("Failed to unmarshal ECDSAPublicKey")
-		}
-		pECDSAPublicKey := eCDSAPublicKey.(*jwk.ECDSAPublicKey)
-		if !reflect.DeepEqual(pECDSAPublicKey, eCDSAPublicKey2) {
+		if !reflect.DeepEqual(publicKey, newPublicKey) {
 			t.Fatal("ECDSA Public Keys do not match")
 		}
 	})
-	t.Run("Marshall Unmarshal Private Key", func(t *testing.T) {
+	t.Run("Unmarshal Private Key", func(t *testing.T) {
 		jwkSrc := `{"keys":
        [
          {"kty":"EC",
@@ -192,7 +178,6 @@ func TestECDSA(t *testing.T) {
 				 }
        ]
   }`
-		expectedPrivKey := []byte{123, 34, 99, 114, 118, 34, 58, 34, 80, 45, 50, 53, 54, 34, 44, 34, 100, 34, 58, 34, 56, 55, 48, 77, 66, 54, 103, 102, 117, 84, 74, 52, 72, 116, 85, 110, 85, 118, 89, 77, 121, 74, 112, 114, 53, 101, 85, 90, 78, 80, 52, 66, 107, 52, 51, 98, 86, 100, 106, 51, 101, 65, 69, 34, 44, 34, 107, 101, 121, 95, 111, 112, 115, 34, 58, 91, 34, 118, 101, 114, 105, 102, 121, 34, 93, 44, 34, 107, 116, 121, 34, 58, 34, 69, 67, 34, 44, 34, 120, 34, 58, 34, 77, 75, 66, 67, 84, 78, 73, 99, 75, 85, 83, 68, 105, 105, 49, 49, 121, 83, 115, 51, 53, 50, 54, 105, 68, 90, 56, 65, 105, 84, 111, 55, 84, 117, 54, 75, 80, 65, 113, 118, 55, 68, 52, 34, 44, 34, 121, 34, 58, 34, 52, 69, 116, 108, 54, 83, 82, 87, 50, 89, 105, 76, 85, 114, 78, 53, 118, 102, 118, 86, 72, 117, 104, 112, 55, 120, 56, 80, 120, 108, 116, 109, 87, 87, 108, 98, 98, 77, 52, 73, 70, 121, 77, 34, 125}
 
 		rawKeySetJSON := &jwk.RawKeySetJSON{}
 		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
@@ -210,29 +195,6 @@ func TestECDSA(t *testing.T) {
 		jwkKey, err := rawKeyJSON.GenerateKey()
 		if _, ok := jwkKey.(*jwk.ECDSAPrivateKey); !ok {
 			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
-		}
-
-		//
-		privKeyBytes, err := json.Marshal(jwkKey)
-		if err != nil {
-			t.Fatal("Failed to marshal ECDSAPrivateKey")
-		}
-		// verify marshal
-
-		if bytes.Compare(privKeyBytes, expectedPrivKey) != 0 {
-			t.Fatal("ECDSAPrivate in bytes do not match")
-		}
-
-		// verify unmarshal
-
-		expECDSAPrivateKey := &jwk.ECDSAPrivateKey{}
-		err = json.Unmarshal(expectedPrivKey, expECDSAPrivateKey)
-		if err != nil {
-			t.Fatal("Failed to unmarshal ECDSAPublicKey")
-		}
-
-		if !reflect.DeepEqual(expECDSAPrivateKey, jwkKey) {
-			t.Fatal("ECDSAPrivate Keys do not match")
 		}
 	})
 	t.Run("Invalid ECDSA Private Key", func(t *testing.T) {

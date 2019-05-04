@@ -1,9 +1,7 @@
 package jwk
 
 import (
-	"encoding/json"
 	"github.com/pkg/errors"
-	"github.com/repenno/jwx-opa/internal/base64"
 	"github.com/repenno/jwx-opa/jwa"
 )
 
@@ -37,49 +35,6 @@ func (s SymmetricKey) Materialize() (interface{}, error) {
 // Octets returns the octets in the key
 func (s SymmetricKey) Octets() []byte {
 	return s.key
-}
-
-func (s *SymmetricKey) ExtractMap(m map[string]interface{}) (err error) {
-
-	const kKey = `k`
-
-	kbuf, err := getRequiredKey(m, kKey)
-	if err != nil {
-		return errors.Wrapf(err, `failed to get required key '%s'`, kKey)
-	}
-	delete(m, kKey)
-
-	var hdrs StandardHeaders
-	if err := hdrs.ExtractMap(m); err != nil {
-		return errors.Wrap(err, `failed to extract header values`)
-	}
-
-	*s = SymmetricKey{
-		StandardHeaders: &hdrs,
-		key:             kbuf,
-	}
-	return nil
-}
-
-func (s SymmetricKey) MarshalJSON() (buf []byte, err error) {
-
-	m := make(map[string]interface{})
-	if err := s.PopulateMap(m); err != nil {
-		return nil, errors.Wrap(err, `failed to populate symmetric key values`)
-	}
-
-	return json.Marshal(m)
-}
-
-func (s SymmetricKey) PopulateMap(m map[string]interface{}) (err error) {
-
-	if err := s.StandardHeaders.PopulateMap(m); err != nil {
-		return errors.Wrap(err, `failed to populate header values`)
-	}
-
-	const kKey = `k`
-	m[kKey] = base64.EncodeToString(s.key)
-	return nil
 }
 
 func (s *SymmetricKey) GenerateKey(keyJSON *RawKeyJSON) error {

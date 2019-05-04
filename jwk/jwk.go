@@ -6,7 +6,6 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"github.com/pkg/errors"
-	"github.com/repenno/jwx-opa/internal/base64"
 	"github.com/repenno/jwx-opa/jwa"
 )
 
@@ -57,15 +56,6 @@ func New(key interface{}) (Key, error) {
 	}
 }
 
-func (set *Set) UnmarshalJSON(data []byte) error {
-	v, err := ParseBytes(data)
-	if err != nil {
-		return errors.Wrap(err, `failed to parse jwk.Set`)
-	}
-	*set = *v
-	return nil
-}
-
 // Parse parses JWK from the incoming io.Reader.
 func Parse(jwkSrc string) (*Set, error) {
 	var jwkKeySet Set
@@ -110,109 +100,6 @@ func ParseBytes(buf []byte) (*Set, error) {
 // ParseString parses JWK from the incoming string.
 func ParseString(s string) (*Set, error) {
 	return Parse(s)
-}
-
-// LookupKeyID looks for keys matching the given key id. Note that the
-// Set *may* contain multiple keys with the same key id
-func (s Set) LookupKeyID(kid string) []Key {
-	var keys []Key
-	for _, key := range s.Keys {
-		if key.GetKeyID() == kid {
-			keys = append(keys, key)
-		}
-	}
-	return keys
-}
-
-func (s *Set) ExtractMap(m map[string]interface{}) error {
-	raw, ok := m["keys"]
-	if !ok {
-		return errors.New("missing 'keys' parameter")
-	}
-
-	v, ok := raw.([]interface{})
-	if !ok {
-		return errors.New("invalid 'keys' parameter")
-	}
-
-	var ks Set
-	for _, c := range v {
-		conf, ok := c.(map[string]interface{})
-		if !ok {
-			return errors.New("invalid element in 'keys'")
-		}
-
-		k, err := constructKey(conf)
-		if err != nil {
-			return errors.Wrap(err, `failed to construct key from map`)
-		}
-		ks.Keys = append(ks.Keys, k)
-	}
-
-	*s = ks
-	return nil
-}
-
-func constructKey(m map[string]interface{}) (Key, error) {
-	kty, ok := m[KeyTypeKey].(string)
-	if !ok {
-		return nil, errors.Errorf(`unsupported kty type %T`, m[KeyTypeKey])
-	}
-
-	var key Key
-	switch jwa.KeyType(kty) {
-	case jwa.RSA:
-		if _, ok := m["d"]; ok {
-			key = &RSAPrivateKey{}
-		} else {
-			key = &RSAPublicKey{}
-		}
-	case jwa.EC:
-		if _, ok := m["d"]; ok {
-			key = &ECDSAPrivateKey{}
-		} else {
-			key = &ECDSAPublicKey{}
-		}
-	case jwa.OctetSeq:
-		key = &SymmetricKey{}
-	default:
-		return nil, errors.Errorf(`invalid kty %s`, kty)
-	}
-
-	if err := key.ExtractMap(m); err != nil {
-		return nil, errors.Wrap(err, `failed to extract key from map`)
-	}
-
-	return key, nil
-}
-
-func getRequiredKey(m map[string]interface{}, key string) ([]byte, error) {
-	return getKey(m, key, true)
-}
-
-func getOptionalKey(m map[string]interface{}, key string) ([]byte, error) {
-	return getKey(m, key, false)
-}
-
-func getKey(m map[string]interface{}, key string, required bool) ([]byte, error) {
-	v, ok := m[key]
-	if !ok {
-		if !required {
-			return nil, errors.Errorf(`missing parameter '%s'`, key)
-		}
-		return nil, errors.Errorf(`missing required parameter '%s'`, key)
-	}
-
-	vs, ok := v.(string)
-	if !ok {
-		return nil, errors.Errorf(`invalid type for parameter '%s': %T`, key, v)
-	}
-
-	buf, err := base64.DecodeString(vs)
-	if err != nil {
-		return nil, errors.Wrapf(err, `failed to base64 decode key %s`, key)
-	}
-	return buf, nil
 }
 
 func (r *RawKeyJSON) GenerateKey() (Key, error) {
