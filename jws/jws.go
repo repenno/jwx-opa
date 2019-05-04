@@ -32,29 +32,6 @@ import (
 	"github.com/repenno/jwx-opa/jws/verify"
 )
 
-type payloadSigner struct {
-	signer    sign.Signer
-	key       interface{}
-	protected Headers
-	public    Headers
-}
-
-func (s *payloadSigner) Sign(payload []byte) ([]byte, error) {
-	return s.signer.Sign(payload, s.key)
-}
-
-func (s *payloadSigner) Algorithm() jwa.SignatureAlgorithm {
-	return s.signer.Algorithm()
-}
-
-func (s *payloadSigner) ProtectedHeader() Headers {
-	return s.protected
-}
-
-func (s *payloadSigner) PublicHeader() Headers {
-	return s.public
-}
-
 // SignLiteral generates a Signature for the given Payload and Headers, and serializes
 // it in compact serialization format. In this format you may NOT use
 // multiple signers.
