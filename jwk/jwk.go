@@ -57,6 +57,7 @@ func New(key interface{}) (Key, error) {
 }
 
 func parse(jwkSrc string) (*Set, error) {
+
 	var jwkKeySet Set
 	var jwkKey Key
 	rawKeySetJSON := &RawKeySetJSON{}
