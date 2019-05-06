@@ -4,12 +4,16 @@ package jwa
 
 import (
 	"github.com/pkg/errors"
+	"strconv"
 )
 
 // SignatureAlgorithm represents the various signature algorithms as described in https://tools.ietf.org/html/rfc7518#section-3.1
 type SignatureAlgorithm string
 
+var signatureAlg = map[string]struct{}{"ES256": {}, "ES384": {}, "ES512": {}, "HS256": {}, "HS384": {}, "HS512": {}, "PS256": {}, "PS384": {}, "PS512": {}, "RS256": {}, "RS384": {}, "RS512": {}, "none": {}}
+
 // Supported values for SignatureAlgorithm
+
 const (
 	ES256       SignatureAlgorithm = "ES256" // ECDSA using P-256 and SHA-256
 	ES384       SignatureAlgorithm = "ES384" // ECDSA using P-384 and SHA-384
@@ -29,29 +33,46 @@ const (
 
 // Accept is used when conversion from values given by
 // outside sources (such as JSON payloads) is required
-func (v *SignatureAlgorithm) Accept(value interface{}) error {
+func (signature *SignatureAlgorithm) Accept(value interface{}) error {
 	var tmp SignatureAlgorithm
 	switch x := value.(type) {
 	case string:
 		tmp = SignatureAlgorithm(x)
 	case SignatureAlgorithm:
 		tmp = x
-	case *SignatureAlgorithm:
-		tmp = *x
 	default:
 		return errors.Errorf(`invalid type for jwa.SignatureAlgorithm: %T`, value)
 	}
-	switch tmp {
-	case ES256, ES384, ES512, HS256, HS384, HS512, NoSignature, PS256, PS384, PS512, RS256, RS384, RS512:
-	default:
-		return errors.Errorf(`invalid jwa.SignatureAlgorithm value`)
+	_, ok := signatureAlg[tmp.String()]
+	if !ok {
+		return errors.Errorf("Unknown signature algorithm")
 	}
-
-	*v = tmp
+	*signature = tmp
 	return nil
 }
 
 // String returns the string representation of a SignatureAlgorithm
-func (v SignatureAlgorithm) String() string {
-	return string(v)
+func (signature SignatureAlgorithm) String() string {
+	return string(signature)
+}
+
+// Unmarshals and checks data as Signature Algorithm
+func (signature *SignatureAlgorithm) UnmarshalJSON(data []byte) error {
+	var quote byte = '"'
+	var quoted string
+	if data[0] == quote {
+		var err error
+		quoted, err = strconv.Unquote(string(data))
+		if err != nil {
+			return errors.Wrap(err, "Failed to process signature algorithm")
+		}
+	} else {
+		quoted = string(data)
+	}
+	_, ok := signatureAlg[quoted]
+	if !ok {
+		return errors.Errorf("Unknown signature algorithm")
+	}
+	*signature = SignatureAlgorithm(quoted)
+	return nil
 }

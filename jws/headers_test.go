@@ -26,7 +26,7 @@ func TestHeader(t *testing.T) {
 		jws.TypeKey:        "JWT",
 		jws.KeyIDKey:       "e9bc097a-ce51-4036-9562-d2ade882db0d",
 	}
-	t.Run("Roundtrip", func(t *testing.T) {
+	t.Run("RoundTrip", func(t *testing.T) {
 
 		var h jws.StandardHeaders
 		for k, v := range values {
@@ -38,8 +38,6 @@ func TestHeader(t *testing.T) {
 			if !ok {
 				t.Fatalf("Set failed for %s", k)
 			}
-			//fmt.Println(reflect.TypeOf(got).String())
-			//fmt.Println(reflect.TypeOf(v).String())
 			if !reflect.DeepEqual(v, got) {
 				t.Fatalf("Values do not match: (%v, %v)", v, got)
 			}

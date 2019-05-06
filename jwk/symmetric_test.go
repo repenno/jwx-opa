@@ -15,7 +15,7 @@ func TestSymmetric(t *testing.T) {
 
 	t.Run("A3", func(t *testing.T) {
 		const (
-			key1 = `GawgguFyGrWKav7AX4VKUg`
+			key1 = `5Fn8i7r5cRWZW_yyr9Flkg`
 			key2 = `AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow`
 		)
 
@@ -32,8 +32,8 @@ func TestSymmetric(t *testing.T) {
   "keys": [
     {
       "kty": "oct",
-      "alg": "A128KW",
-      "k": "GawgguFyGrWKav7AX4VKUg"
+      "alg": "HS256",
+	  "k": "5Fn8i7r5cRWZW_yyr9Flkg"	
     },
     {
       "kty": "oct",
