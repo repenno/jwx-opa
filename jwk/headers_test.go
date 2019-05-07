@@ -2,16 +2,17 @@ package jwk_test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/repenno/jwx-opa/jwa"
 	"github.com/repenno/jwx-opa/jwk"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestHeader(t *testing.T) {
+
 	privateHeaderParams := map[string]interface{}{"one": "1", "two": "11"}
-	t.Run("Roundtrip", func(t *testing.T) {
+	t.Run("RoundTrip", func(t *testing.T) {
 		values := map[string]interface{}{
 			jwk.KeyIDKey:         "helloworld01",
 			jwk.KeyTypeKey:       jwa.RSA,
@@ -22,21 +23,23 @@ func TestHeader(t *testing.T) {
 
 		var h jwk.StandardHeaders
 		for k, v := range values {
-			if !assert.NoError(t, h.Set(k, v), "Set works for '%s'", k) {
-				return
+			err := h.Set(k, v)
+			if err != nil {
+				t.Fatalf("failed to set value for: %s", k)
 			}
 
 			got, ok := h.Get(k)
-			if !assert.True(t, ok, "Get works for '%s'", k) {
-				return
+			if !ok {
+				t.Fatalf("failed to get value for: %s", k)
 			}
 
-			if !assert.Equal(t, v, got, "values match '%s'", k) {
-				return
+			if !reflect.DeepEqual(v, got) {
+				t.Fatalf("mismtached values for: %s", k)
 			}
 
-			if !assert.NoError(t, h.Set(k, v), "Set works for '%s'", k) {
-				return
+			err = h.Set(k, v)
+			if err != nil {
+				t.Fatalf("failed to set value for: %s", k)
 			}
 		}
 	})

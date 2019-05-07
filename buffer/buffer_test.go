@@ -1,6 +1,7 @@
 package buffer
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -9,35 +10,36 @@ import (
 
 func TestBuffer_FromUint(t *testing.T) {
 	b := FromUint(1)
-	if !assert.Equal(t, []byte{1}, b.Bytes(), "should be left trimmed") {
-		return
+	if bytes.Compare([]byte{1}, b.Bytes()) != 0 {
+		t.Fatal("mismatched buffer values")
 	}
 }
 
 func TestBuffer_Convert(t *testing.T) {
 	v1 := []byte{'a', 'b', 'c'}
 	b := Buffer(v1)
-
-	if !assert.Equal(t, v1, b.Bytes()) {
-		return
+	if bytes.Compare(v1, b.Bytes()) != 0 {
+		t.Fatal("mismatched buffer values")
 	}
 
 	v2 := "abc"
 	b = Buffer(v2)
-	if !assert.Equal(t, []byte(v2), b.Bytes()) {
-		return
+	if bytes.Compare([]byte(v2), b.Bytes()) != 0 {
+		t.Fatal("mismatched buffer values")
 	}
-
 }
 
 func TestBuffer_Base64Encode(t *testing.T) {
 	b := Buffer{'a', 'b', 'c'}
 	v, err := b.Base64Encode()
+	if err != nil {
+		t.Fatal("failed to base64 encode")
+	}
 	if !assert.NoError(t, err, "Base64 encode is successful") {
 		return
 	}
-	if !assert.Equal(t, []byte{'Y', 'W', 'J', 'j'}, v) {
-		return
+	if bytes.Compare([]byte{'Y', 'W', 'J', 'j'}, v) != 0 {
+		t.Fatal("mismatched buffer values")
 	}
 }
 
@@ -45,33 +47,36 @@ func TestJSON(t *testing.T) {
 	b1 := Buffer{'a', 'b', 'c'}
 
 	jsontxt, err := json.Marshal(b1)
+	if err != nil {
+		t.Fatal("failed to marshal buffer")
+	}
 	if !assert.NoError(t, err) {
 		return
 	}
-
-	if !assert.Equal(t, `"YWJj"`, string(jsontxt)) {
-		return
+	if `"YWJj"` != string(jsontxt) {
+		t.Fatal("mismatched json values")
 	}
 
 	var b2 Buffer
-	if !assert.NoError(t, json.Unmarshal(jsontxt, &b2)) {
-		return
+	err = json.Unmarshal(jsontxt, &b2)
+	if err != nil {
+		t.Fatal("failed to marshal buffer")
 	}
 
-	if !assert.Equal(t, b1, b2) {
-		return
+	if bytes.Compare(b1, b2) != 0 {
+		t.Fatal("mismatched buffer values")
 	}
 }
 
 func TestFunky(t *testing.T) {
 	s := `QD4_B3ghg0PNu-c_EAlXn3Xlb0gzAFPJSYQSI1cZZ8sPIxISgPMtNJTzgncC281IaKDXLV1aEnYuH5eH-4u4f383zlyBCGKSKSQWmqKNE7xcIqleFVNsfzOucTL4QRxfbcyHcli_symC_RGWJ6GdocE0VgyYN8t9_0sm_Nq5lcwtYEQs_hNlf1ileCjjdsUfC05zTbbrLpMjgI3IK5_QxOU81FLei4LMx3iQ1kqrIGH5FxxQMKGdx_fDaRQ-YBAA2YVqn7rs3TcwQ7NUjjz8JyDE168NlMV1WxoDC9nwOe0O6K4NzFuWpoGHTh0M-0lT5M3dy9kEBYgPtWoe_u9dogA`
 	b := Buffer{}
-	if !assert.NoError(t, b.Base64Decode([]byte(s)), "Base64Decode should work") {
-		return
+	err := b.Base64Decode([]byte(s))
+	if err != nil {
+		t.Fatal("failed to base64 decode")
 	}
-
-	if !assert.Equal(t, 257, b.Len(), "Should 257 bytes") {
-		return
+	if 257 != b.Len() {
+		t.Fatal("Mismatched buffer lengths")
 	}
 }
 
@@ -83,11 +88,10 @@ func TestBuffer_NData(t *testing.T) {
 	}
 
 	b1, err := FromNData(nd)
-	if !assert.NoError(t, err, "FromNData succeeds") {
-		return
+	if err != nil {
+		t.Fatal("failed to extract data")
 	}
-
-	if !assert.Equal(t, payload, b1.Bytes(), "payload matches") {
-		return
+	if bytes.Compare(payload, b1.Bytes()) != 0 {
+		t.Fatal("mismatched byte values ")
 	}
 }

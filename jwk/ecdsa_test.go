@@ -12,7 +12,6 @@ import (
 
 	"github.com/repenno/jwx-opa/jwa"
 	"github.com/repenno/jwx-opa/jwk"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestECDSA(t *testing.T) {
@@ -102,13 +101,13 @@ func TestECDSA(t *testing.T) {
 	t.Run("Initialization", func(t *testing.T) {
 		// Generate an ECDSA P-256 test key.
 		ecPrk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if !assert.NoError(t, err, "Failed to generate EC P-256 key") {
-			return
+		if err != nil {
+			t.Fatal("failed to generate EC P-256 key")
 		}
 		// Test initialization of a private EC JWK.
 		prk, err := jwk.New(ecPrk)
-		if !assert.NoError(t, err, `jwk.New should succeed`) {
-			return
+		if err != nil {
+			t.Fatal("failed to create new private key")
 		}
 		err = prk.Set(jwk.KeyIDKey, "MyKey")
 		if err != nil {
@@ -124,8 +123,8 @@ func TestECDSA(t *testing.T) {
 
 		// Test initialization of a public EC JWK.
 		puk, err := jwk.New(&ecPrk.PublicKey)
-		if !assert.NoError(t, err, `jwk.New should succeed`) {
-			return
+		if err != nil {
+			t.Fatal("failed to create new public key")
 		}
 
 		err = puk.Set(jwk.KeyIDKey, "MyKey")
