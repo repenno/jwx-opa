@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBuffer_FromUint(t *testing.T) {
@@ -35,9 +33,6 @@ func TestBuffer_Base64Encode(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to base64 encode")
 	}
-	if !assert.NoError(t, err, "Base64 encode is successful") {
-		return
-	}
 	if bytes.Compare([]byte{'Y', 'W', 'J', 'j'}, v) != 0 {
 		t.Fatal("mismatched buffer values")
 	}
@@ -49,9 +44,6 @@ func TestJSON(t *testing.T) {
 	jsontxt, err := json.Marshal(b1)
 	if err != nil {
 		t.Fatal("failed to marshal buffer")
-	}
-	if !assert.NoError(t, err) {
-		return
 	}
 	if `"YWJj"` != string(jsontxt) {
 		t.Fatal("mismatched json values")
@@ -83,8 +75,8 @@ func TestFunky(t *testing.T) {
 func TestBuffer_NData(t *testing.T) {
 	payload := []byte("Alice")
 	nd := Buffer(payload).NData()
-	if !assert.Equal(t, []byte{0, 0, 0, 5, 65, 108, 105, 99, 101}, nd, "NData mathces") {
-		return
+	if bytes.Compare([]byte{0, 0, 0, 5, 65, 108, 105, 99, 101}, nd) != 0 {
+		t.Fatal("mismatched byte buffer values")
 	}
 
 	b1, err := FromNData(nd)
