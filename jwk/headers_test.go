@@ -40,7 +40,7 @@ func TestHeader(t *testing.T) {
 			}
 		}
 	})
-	t.Run("RoundtripError", func(t *testing.T) {
+	t.Run("RoundTripError 1", func(t *testing.T) {
 
 		type dummyStruct struct {
 			dummy1 int
@@ -83,6 +83,50 @@ func TestHeader(t *testing.T) {
 			t.Fatalf("KeyOps should be empty string")
 		}
 	})
+	t.Run("RoundTripError 2", func(t *testing.T) {
+
+		type dummyStruct struct {
+			dummy1 int
+			dummy2 float64
+		}
+		dummy := &dummyStruct{1, 3.4}
+		values := map[string]interface{}{
+			jwk.AlgorithmKey:     jwa.SignatureAlgorithm("dummy"),
+			jwk.KeyIDKey:         1,
+			jwk.KeyTypeKey:       jwa.KeyType("dummy"),
+			jwk.KeyUsageKey:      dummy,
+			jwk.KeyOpsKey:        []string{"unknown", "usage"},
+			jwk.PrivateParamsKey: dummy,
+		}
+
+		var h jwk.StandardHeaders
+		for k, v := range values {
+			err := h.Set(k, v)
+			if err == nil {
+				t.Fatalf("Setting %s value should have failed", k)
+			}
+		}
+		err := h.Set("Default", dummy)
+		if err != nil {
+			t.Fatalf("Setting %s value failed", "default")
+		}
+		if h.GetAlgorithm() != jwa.NoValue {
+			t.Fatalf("Algorithm should be empty string")
+		}
+		if h.GetKeyID() != "" {
+			t.Fatalf("KeyID should be empty string")
+		}
+		if h.GetKeyType() != "" {
+			t.Fatalf("KeyType should be empty string")
+		}
+		if h.GetKeyUsage() != "" {
+			t.Fatalf("KeyUsage should be empty string")
+		}
+		if h.GetKeyOps() != nil {
+			t.Fatalf("KeyOps should be empty string")
+		}
+	})
+
 	t.Run("Algorithm", func(t *testing.T) {
 		var h jwk.StandardHeaders
 		for _, value := range []interface{}{jwa.RS256, jwa.ES256} {
@@ -104,13 +148,14 @@ func TestHeader(t *testing.T) {
 	t.Run("KeyType", func(t *testing.T) {
 		var h jwk.StandardHeaders
 		for _, value := range []interface{}{jwa.RSA, "RSA"} {
-			if !assert.NoError(t, h.Set(jwk.KeyTypeKey, value), "Set for kty should succeed") {
-				return
+			err := h.Set(jwk.KeyTypeKey, value)
+			if err != nil {
+				t.Fatalf("failed to set key type: %s", err.Error())
 			}
 
 			got, ok := h.Get(jwk.KeyTypeKey)
-			if !assert.True(t, ok, "Get for kty should succeed") {
-				return
+			if !ok {
+				t.Fatal("failed to get key type")
 			}
 
 			var s string
@@ -121,8 +166,8 @@ func TestHeader(t *testing.T) {
 				s = value.(string)
 			}
 
-			if !assert.Equal(t, jwa.KeyType(s), got, "values match") {
-				return
+			if got != jwa.KeyType(s) {
+				t.Fatal("expected and realized key types do not match")
 			}
 		}
 	})

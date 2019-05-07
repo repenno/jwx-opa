@@ -75,6 +75,18 @@ func TestParseErrors(t *testing.T) {
 	})
 }
 
+func TestAlgError(t *testing.T) {
+
+	t.Run("Unknown Algorithm", func(t *testing.T) {
+		const hdr = `{"typ":"JWT",` + "\r\n" + ` "alg":"unknown"}`
+		var standardHeaders jws.StandardHeaders
+		err := json.Unmarshal([]byte(hdr), &standardHeaders)
+		if err == nil {
+			t.Fatal("header parsing should have failed")
+		}
+	})
+}
+
 func TestRoundTrip(t *testing.T) {
 	payload := []byte("Lorem ipsum")
 	sharedKey := []byte("Avracadabra")
