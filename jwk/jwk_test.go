@@ -132,7 +132,28 @@ func TestParseErrors(t *testing.T) {
 			t.Fatal("JWK parse should have failed")
 		}
 	})
+	t.Run("Invalid Key Ops", func(t *testing.T) {
+		const jwkSrc = `{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "key_ops": [
+        "invalid",
+        "sign"
+      ],
+      "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+      "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
+      "d": "870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
+    }
+  ]
+}`
 
+		_, err := jwk.ParseString(jwkSrc)
+		if err == nil {
+			t.Fatal("JWK parse should have failed")
+		}
+	})
 }
 
 func TestAppendix(t *testing.T) {
