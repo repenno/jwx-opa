@@ -7,6 +7,7 @@ import (
 	"github.com/repenno/jwx-opa/jws/sign"
 )
 
+// Verifier provides a common interface for supported alg verification methods
 type Verifier interface {
 	// Verify checks whether the payload and signature are valid for
 	// the given key.

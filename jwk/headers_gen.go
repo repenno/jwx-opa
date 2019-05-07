@@ -30,6 +30,7 @@ type Headers interface {
 	GetPrivateParams() map[string]interface{}
 }
 
+// StandardHeaders stores the common JWK parameters
 type StandardHeaders struct {
 	Algorithm     *jwa.SignatureAlgorithm `json:"alg,omitempty"`           // https://tools.ietf.org/html/rfc7517#section-4.4
 	KeyID         string                  `json:"kid,omitempty"`           // https://tools.ietf.org/html/rfc7515#section-4.1.4
