@@ -34,7 +34,7 @@ func GetPublicKey(key interface{}) (interface{}, error) {
 	}
 }
 
-// New creates a jwk.Key from the given key.
+// GetKeyTypeFromKey creates a jwk.Key from the given key.
 func GetKeyTypeFromKey(key interface{}) jwa.KeyType {
 
 	switch key.(type) {

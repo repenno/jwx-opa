@@ -5,10 +5,13 @@ import (
 	"github.com/repenno/jwx-opa/buffer"
 )
 
+// EllipticCurve provides a indirect type to standard elliptic curve such that we can
+// use it for unmarshal
 type EllipticCurve struct {
 	elliptic.Curve
 }
 
+// AlgorithmParameters provides a single structure suitable to unmarshaling any JWK
 type AlgorithmParameters struct {
 	N   buffer.Buffer          `json:"n,omitempty"`
 	E   buffer.Buffer          `json:"e,omitempty"`

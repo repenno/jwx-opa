@@ -7,6 +7,7 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 )
 
+// Convenience constants for common JWK parameters
 const (
 	AlgorithmKey     = "alg"
 	KeyIDKey         = "kid"
@@ -16,6 +17,7 @@ const (
 	PrivateParamsKey = "privateParams"
 )
 
+// Headers provides a common interface to all future possible headers
 type Headers interface {
 	Get(string) (interface{}, bool)
 	Set(string, interface{}) error
@@ -77,9 +79,8 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 		alg := h.GetAlgorithm()
 		if alg != jwa.NoValue {
 			return alg, true
-		} else {
-			return nil, false
 		}
+		return nil, false
 	case KeyIDKey:
 		v := h.KeyID
 		if v == "" {

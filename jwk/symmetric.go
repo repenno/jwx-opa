@@ -29,6 +29,7 @@ func (s SymmetricKey) Octets() []byte {
 	return s.key
 }
 
+// GenerateKey creates a Symmetric key from a RawKeyJSON
 func (s *SymmetricKey) GenerateKey(keyJSON *RawKeyJSON) error {
 
 	*s = SymmetricKey{

@@ -20,16 +20,19 @@ type Verifier interface {
 
 type rsaVerifyFunc func([]byte, []byte, *rsa.PublicKey) error
 
+// RSAVerifier implements the Verifier interface
 type RSAVerifier struct {
 	verify rsaVerifyFunc
 }
 
 type ecdsaVerifyFunc func([]byte, []byte, *ecdsa.PublicKey) error
 
+// ECDSAVerifier implements the Verifier interface
 type ECDSAVerifier struct {
 	verify ecdsaVerifyFunc
 }
 
+// HMACVerifier implements the Verifier interface
 type HMACVerifier struct {
 	signer sign.Signer
 }

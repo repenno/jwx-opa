@@ -13,7 +13,6 @@ type SignatureAlgorithm string
 var signatureAlg = map[string]struct{}{"ES256": {}, "ES384": {}, "ES512": {}, "HS256": {}, "HS384": {}, "HS512": {}, "PS256": {}, "PS384": {}, "PS512": {}, "RS256": {}, "RS384": {}, "RS512": {}, "none": {}}
 
 // Supported values for SignatureAlgorithm
-
 const (
 	ES256       SignatureAlgorithm = "ES256" // ECDSA using P-256 and SHA-256
 	ES384       SignatureAlgorithm = "ES384" // ECDSA using P-384 and SHA-384
@@ -56,7 +55,7 @@ func (signature SignatureAlgorithm) String() string {
 	return string(signature)
 }
 
-// Unmarshals and checks data as Signature Algorithm
+// UnmarshalJSON unmarshals and checks data as Signature Algorithm
 func (signature *SignatureAlgorithm) UnmarshalJSON(data []byte) error {
 	var quote byte = '"'
 	var quoted string

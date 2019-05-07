@@ -10,7 +10,7 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 )
 
-var HMACSignFuncs = map[jwa.SignatureAlgorithm]hmacSignFunc{}
+var hmacSignFuncs = map[jwa.SignatureAlgorithm]hmacSignFunc{}
 
 func init() {
 	algs := map[jwa.SignatureAlgorithm]func() hash.Hash{
@@ -20,13 +20,13 @@ func init() {
 	}
 
 	for alg, h := range algs {
-		HMACSignFuncs[alg] = makeHMACSignFunc(h)
+		hmacSignFuncs[alg] = makeHMACSignFunc(h)
 
 	}
 }
 
 func newHMAC(alg jwa.SignatureAlgorithm) (*HMACSigner, error) {
-	signer, ok := HMACSignFuncs[alg]
+	signer, ok := hmacSignFuncs[alg]
 	if !ok {
 		return nil, errors.Errorf(`unsupported algorithm while trying to create HMAC signer: %s`, alg)
 	}
@@ -45,10 +45,12 @@ func makeHMACSignFunc(hfunc func() hash.Hash) hmacSignFunc {
 	})
 }
 
+// Algorithm returns the signer algorithm
 func (s HMACSigner) Algorithm() jwa.SignatureAlgorithm {
 	return s.alg
 }
 
+// Sign signs payload with a Symmetric  key
 func (s HMACSigner) Sign(payload []byte, key interface{}) ([]byte, error) {
 	hmackey, ok := key.([]byte)
 	if !ok {

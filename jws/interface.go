@@ -14,6 +14,7 @@ type Message struct {
 	Signatures []*Signature `json:"signatures,omitempty"`
 }
 
+// Signature represents the headers and signature of a JWS message
 type Signature struct {
 	Headers   Headers `json:"header,omitempty"`    // Unprotected Headers
 	Protected Headers `json:"Protected,omitempty"` // Protected Headers

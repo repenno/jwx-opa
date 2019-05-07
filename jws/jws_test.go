@@ -622,5 +622,7 @@ func TestVerifyErrors(t *testing.T) {
 			t.Fatal("JWS verification should have failed")
 		}
 	})
-
+	t.Run("Invalid alg", func(t *testing.T) {
+		verify.New("dummy")
+	})
 }

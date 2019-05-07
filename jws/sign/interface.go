@@ -7,6 +7,7 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 )
 
+// Signer provides a common interface for supported alg signing methods
 type Signer interface {
 	// Sign creates a signature for the given `payload`.
 	// `key` is the key used for signing the payload, and is usually
