@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/repenno/jwx-opa/jwa"
 	"github.com/repenno/jwx-opa/jwk"
 )
 
@@ -59,6 +60,9 @@ func TestSymmetric(t *testing.T) {
 		realizedKey0, err := jwkKey0.Materialize()
 		if err != nil {
 			t.Fatalf("Failed to materialize key: %s", err.Error())
+		}
+		if jwk.GetKeyTypeFromKey(realizedKey0) != jwa.OctetSeq {
+			t.Fatal("Wrong Key Type")
 		}
 		if bytes.Compare(realizedKey0.([]byte), buf1) != 0 {
 			t.Fatalf("Mismatched key values %s:%s", realizedKey0.([]byte), buf1)

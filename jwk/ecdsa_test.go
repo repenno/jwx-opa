@@ -88,6 +88,9 @@ func TestECDSA(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to expose private key: %s", err.Error())
 		}
+		if jwk.GetKeyTypeFromKey(privateKey) != jwa.EC {
+			t.Fatal("Wrong Key Type")
+		}
 		if _, ok := privateKey.(*ecdsa.PrivateKey); !ok {
 			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", privateKey))
 		}
@@ -183,6 +186,12 @@ func TestECDSA(t *testing.T) {
 		publicKey, err := jwk.GetPublicKey(privateKey)
 		if err != nil {
 			t.Fatalf("Failed to expose public key: %s", err.Error())
+		}
+		if jwk.GetKeyTypeFromKey(publicKey) != jwa.EC {
+			t.Fatal("Wrong Key Type")
+		}
+		if jwk.GetKeyTypeFromKey(nil) != jwa.InvalidKeyType {
+			t.Fatal("Key should be invalid")
 		}
 		if _, ok := publicKey.(*ecdsa.PublicKey); !ok {
 			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", privateKey))

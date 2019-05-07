@@ -4,10 +4,13 @@ package jwa
 
 import (
 	"github.com/pkg/errors"
+	"strconv"
 )
 
 // KeyType represents the key type ("kty") that are supported
 type KeyType string
+
+var keyTypeAlg = map[string]struct{}{"EC": {}, "oct": {}, "RSA": {}}
 
 // Supported values for KeyType
 const (
@@ -19,7 +22,7 @@ const (
 
 // Accept is used when conversion from values given by
 // outside sources (such as JSON payloads) is required
-func (v *KeyType) Accept(value interface{}) error {
+func (keyType *KeyType) Accept(value interface{}) error {
 	var tmp KeyType
 	switch x := value.(type) {
 	case string:
@@ -31,17 +34,37 @@ func (v *KeyType) Accept(value interface{}) error {
 	default:
 		return errors.Errorf(`invalid type for jwa.KeyType: %T`, value)
 	}
-	switch tmp {
-	case EC, OctetSeq, RSA:
-	default:
-		return errors.Errorf(`invalid jwa.KeyType value`)
+	_, ok := keyTypeAlg[tmp.String()]
+	if !ok {
+		return errors.Errorf("Unknown Key Type algorithm")
 	}
 
-	*v = tmp
+	*keyType = tmp
 	return nil
 }
 
 // String returns the string representation of a KeyType
-func (v KeyType) String() string {
-	return string(v)
+func (keyType KeyType) String() string {
+	return string(keyType)
+}
+
+// Unmarshals and checks data as KeyType Algorithm
+func (keyType *KeyType) UnmarshalJSON(data []byte) error {
+	var quote byte = '"'
+	var quoted string
+	if data[0] == quote {
+		var err error
+		quoted, err = strconv.Unquote(string(data))
+		if err != nil {
+			return errors.Wrap(err, "Failed to process signature algorithm")
+		}
+	} else {
+		quoted = string(data)
+	}
+	_, ok := keyTypeAlg[quoted]
+	if !ok {
+		return errors.Errorf("Unknown signature algorithm")
+	}
+	*keyType = KeyType(quoted)
+	return nil
 }

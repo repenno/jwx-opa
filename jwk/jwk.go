@@ -35,6 +35,21 @@ func GetPublicKey(key interface{}) (interface{}, error) {
 }
 
 // New creates a jwk.Key from the given key.
+func GetKeyTypeFromKey(key interface{}) jwa.KeyType {
+
+	switch key.(type) {
+	case *rsa.PrivateKey, *rsa.PublicKey:
+		return jwa.RSA
+	case *ecdsa.PrivateKey, *ecdsa.PublicKey:
+		return jwa.EC
+	case []byte:
+		return jwa.OctetSeq
+	default:
+		return jwa.InvalidKeyType
+	}
+}
+
+// New creates a jwk.Key from the given key.
 func New(key interface{}) (Key, error) {
 	if key == nil {
 		return nil, errors.New(`jwk.New requires a non-nil key`)
