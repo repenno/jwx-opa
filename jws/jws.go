@@ -68,14 +68,8 @@ func SignLiteral(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, hd
 // multiple signers.
 //
 // If you would like to pass custom Headers, use the WithHeaders option.
-func SignWithOption(payload []byte, alg jwa.SignatureAlgorithm, key interface{}, options ...Option) ([]byte, error) {
+func SignWithOption(payload []byte, alg jwa.SignatureAlgorithm, key interface{}) ([]byte, error) {
 	var headers Headers = &StandardHeaders{}
-	for _, o := range options {
-		switch o.Name() {
-		case optkeyHeaders:
-			headers = o.Value().(Headers)
-		}
-	}
 
 	err := headers.Set(AlgorithmKey, alg)
 	if err != nil {

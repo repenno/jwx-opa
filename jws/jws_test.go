@@ -22,7 +22,8 @@ import (
 const examplePayload = `{"iss":"joe",` + "\r\n" + ` "exp":1300819380,` + "\r\n" + ` "http://example.com/is_root":true}`
 const exampleCompactSerialization = `eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk`
 
-func TestParse(t *testing.T) {
+func TestParseErrors(t *testing.T) {
+
 	t.Run("Empty bytes.Buffer", func(t *testing.T) {
 		_, err := jws.ParseString("")
 		if err == nil {
@@ -97,6 +98,7 @@ func TestRoundTrip(t *testing.T) {
 }
 
 func TestVerifyWithJWKSet(t *testing.T) {
+
 	payload := []byte("Hello, World!")
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -562,7 +564,9 @@ func TestDecode_ES384Compact_NoSigTrim(t *testing.T) {
 		t.Fatalf("Message verification failed: %s", err.Error())
 	}
 }
-func TestSign(t *testing.T) {
+
+func TestSignErrors(t *testing.T) {
+
 	t.Run("Bad algorithm", func(t *testing.T) {
 		_, err := jws.SignWithOption([]byte(nil), jwa.SignatureAlgorithm("FooBar"), nil)
 		if err == nil {
@@ -581,9 +585,6 @@ func TestSign(t *testing.T) {
 			t.Fatal("Verify with no private key should return error")
 		}
 	})
-}
-
-func TestSignErrors(t *testing.T) {
 	t.Run("Invalid signature algorithm", func(t *testing.T) {
 		_, err := jws.SignLiteral([]byte("payload"), jwa.SignatureAlgorithm("dummy"), nil, []byte("header"))
 		if err == nil {

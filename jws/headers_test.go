@@ -109,4 +109,14 @@ func TestHeader(t *testing.T) {
 			t.Fatal("Failed to get default value")
 		}
 	})
+	t.Run("Unknown alg", func(t *testing.T) {
+
+		headers := `{"typ":"JWT",` + "\r\n" + ` "alg":"dummy"}`
+		var standardHeaders jws.StandardHeaders
+		err := json.Unmarshal([]byte(headers), &standardHeaders)
+		if err == nil {
+			t.Fatal("Unmarshal should have failed")
+		}
+
+	})
 }
