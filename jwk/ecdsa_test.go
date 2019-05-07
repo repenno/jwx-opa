@@ -16,18 +16,23 @@ import (
 )
 
 func TestECDSA(t *testing.T) {
+
 	t.Run("Key Generation Errors", func(t *testing.T) {
-		jwkSrc := `{"keys":
-       [
-         {"kty":"EC",
-          "crv":"P-256",
-          "key_ops": ["verify"],
-          "x":"MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
-          "y":"4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
-          "d":"870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
-				 }
-       ]
-  }`
+		jwkSrc := `{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "key_ops": [
+        "verify",
+        "sign"
+      ],
+      "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+      "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
+      "d": "870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
+    }
+  ]
+}`
 
 		rawKeySetJSON := &jwk.RawKeySetJSON{}
 		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
@@ -55,35 +60,27 @@ func TestECDSA(t *testing.T) {
 		}
 	})
 	t.Run("Parse Private Key", func(t *testing.T) {
-		jwkSrc := `{"keys":
-       [
-         {"kty":"EC",
-          "crv":"P-256",
-          "key_ops": ["verify"],
-          "x":"MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
-          "y":"4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
-          "d":"870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
-				 }
-       ]
-  }`
+		jwkSrc := `{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "key_ops": [
+        "verify"
+      ],
+      "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+      "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
+      "d": "870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
+    }
+  ]
+}`
 
-		rawKeySetJSON := &jwk.RawKeySetJSON{}
-		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		var jwkSet *jwk.Set
+		jwkSet, err := jwk.ParseString(jwkSrc)
 		if err != nil {
-			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
+			t.Fatalf("Failed to parse key: %s", err.Error())
 		}
-		if len(rawKeySetJSON.Keys) != 1 {
-			t.Fatalf("Failed to parse JWK Set: %s", err.Error())
-		}
-		rawKeyJSON := rawKeySetJSON.Keys[0]
-		curveName := rawKeyJSON.Crv
-		if curveName != "P-256" {
-			t.Fatalf("Curve name should be P-256, not: %s ", curveName)
-		}
-		jwkKey, err := rawKeyJSON.GenerateKey()
-		if _, ok := jwkKey.(*jwk.ECDSAPrivateKey); !ok {
-			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
-		}
+		jwkKey := jwkSet.Keys[0]
 		privateKey, err := jwkKey.Materialize()
 		if err != nil {
 			t.Fatalf("Failed to expose private key: %s", err.Error())
@@ -159,23 +156,13 @@ func TestECDSA(t *testing.T) {
   ]
 }`
 
-		rawKeySetJSON := &jwk.RawKeySetJSON{}
-		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		var jwkSet *jwk.Set
+		var jwkKey jwk.Key
+		jwkSet, err := jwk.ParseString(jwkSrc)
 		if err != nil {
-			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
+			t.Fatalf("Failed to parse key: %s", err.Error())
 		}
-		if len(rawKeySetJSON.Keys) != 1 {
-			t.Fatalf("Failed to parse JWK Set: %s", err.Error())
-		}
-		rawKeyJSON := rawKeySetJSON.Keys[0]
-		curveName := rawKeyJSON.Crv
-		if curveName != "P-256" {
-			t.Fatalf("Curve name should be P-256, not: %s ", curveName)
-		}
-		jwkKey, err := rawKeyJSON.GenerateKey()
-		if _, ok := jwkKey.(*jwk.ECDSAPrivateKey); !ok {
-			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
-		}
+		jwkKey = jwkSet.Keys[0]
 		privateKey, err := jwkKey.Materialize()
 		if err != nil {
 			t.Fatalf("Failed to expose private key: %s", err.Error())
@@ -209,43 +196,46 @@ func TestECDSA(t *testing.T) {
 		}
 	})
 	t.Run("Unmarshal Private Key", func(t *testing.T) {
-		jwkSrc := `{"keys":
-       [
-         {"kty":"EC",
-          "crv":"P-256",
-          "key_ops": ["verify"],
-          "x":"MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
-          "y":"4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
-          "d":"870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE"
-				 }
-       ]
-  }`
+		jwkSrc := `{
+  "keys": [
+    {
+      "kty": "EC",
+      "d": "870MB6gfuTJ4HtUnUvYMyJpr5eUZNP4Bk43bVdj3eAE",
+      "crv": "P-256",
+      "key_ops": [
+        "verify"
+      ],
+      "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+      "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM"
+    }
+  ]
+}`
 
-		rawKeySetJSON := &jwk.RawKeySetJSON{}
-		err := json.Unmarshal([]byte(jwkSrc), rawKeySetJSON)
+		var jwkSet *jwk.Set
+		var jwkKey jwk.Key
+		jwkSet, err := jwk.ParseString(jwkSrc)
 		if err != nil {
-			t.Fatalf("Failed to unmarshal JWK Set: %s", err.Error())
+			t.Fatalf("Failed to parse key: %s", err.Error())
 		}
-		if len(rawKeySetJSON.Keys) != 1 {
-			t.Fatalf("Failed to parse JWK Set: %s", err.Error())
+		jwkKey = jwkSet.Keys[0]
+		privateKey, err := jwkKey.Materialize()
+		if err != nil {
+			t.Fatalf("Failed to expose private key: %s", err.Error())
 		}
-		rawKeyJSON := rawKeySetJSON.Keys[0]
-		curveName := rawKeyJSON.Crv
-		if curveName != "P-256" {
-			t.Fatalf("Curve name should be P-256, not: %s ", curveName)
+		if _, ok := privateKey.(*ecdsa.PrivateKey); !ok {
+			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", privateKey))
 		}
-		jwkKey, err := rawKeyJSON.GenerateKey()
 		if _, ok := jwkKey.(*jwk.ECDSAPrivateKey); !ok {
 			t.Fatalf("Key type should be of type: %s", fmt.Sprintf("%T", jwkKey))
 		}
 	})
 	t.Run("Invalid ECDSA Private Key", func(t *testing.T) {
 		const jwkSrc = `{
-		  "kty" : "EC",
-		  "crv" : "P-256",
-		  "y"   : "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
-		  "d"   : "0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk"
-		}`
+  "kty": "EC",
+  "crv": "P-256",
+  "y": "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
+  "d": "0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk"
+}`
 		rawKeyJson := &jwk.RawKeyJSON{}
 		err := json.Unmarshal([]byte(jwkSrc), rawKeyJson)
 		if err != nil {

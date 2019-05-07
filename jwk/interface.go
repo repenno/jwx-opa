@@ -6,36 +6,6 @@ import (
 	"github.com/repenno/jwx-opa/jwa"
 )
 
-// KeyUsageType is used to denote what this key should be used for
-type KeyUsageType string
-
-const (
-	// ForSignature is the value used in the headers to indicate that
-	// this key should be used for signatures
-	ForSignature KeyUsageType = "sig"
-	// ForEncryption is the value used in the headers to indicate that
-	// this key should be used for encryptiong
-	ForEncryption KeyUsageType = "enc"
-)
-
-// KeyOperation is used to denote the allowed operations for a Key
-type KeyOperation string
-
-// KeyOperationList represents an slice of KeyOperation
-type KeyOperationList []KeyOperation
-
-// KeyOperation constants
-const (
-	KeyOpSign       KeyOperation = "sign"       // (compute digital signature or MAC)
-	KeyOpVerify                  = "verify"     // (verify digital signature or MAC)
-	KeyOpEncrypt                 = "encrypt"    // (encrypt content)
-	KeyOpDecrypt                 = "decrypt"    // (decrypt content and validate decryption, if applicable)
-	KeyOpWrapKey                 = "wrapKey"    // (encrypt key)
-	KeyOpUnwrapKey               = "unwrapKey"  // (decrypt key and validate decryption, if applicable)
-	KeyOpDeriveKey               = "deriveKey"  // (derive key)
-	KeyOpDeriveBits              = "deriveBits" // (derive bits not to be used as a key)
-)
-
 // Set is a convenience struct to allow generating and parsing
 // JWK sets as opposed to single JWKs
 type Set struct {
