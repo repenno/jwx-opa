@@ -46,7 +46,7 @@ func (keyType KeyType) String() string {
 	return string(keyType)
 }
 
-// Unmarshals and checks data as KeyType Algorithm
+// UnmarshalJSON unmarshals and checks data as KeyType Algorithm
 func (keyType *KeyType) UnmarshalJSON(data []byte) error {
 	var quote byte = '"'
 	var quoted string

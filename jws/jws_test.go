@@ -117,12 +117,12 @@ func TestVerifyWithJWKSet(t *testing.T) {
 		t.Fatalf("Failed to sign message: %s", err.Error())
 	}
 
-	verified, err := jws.VerifyWithJWKSet(signature, &jwk.Set{Keys: []jwk.Key{jwkKey}})
+	_, err = jws.VerifyWithJWKSet(signature, &jwk.Set{Keys: []jwk.Key{jwkKey}})
 	if err != nil {
 		t.Fatalf("Failed to verify with JWKSet: %s", err.Error())
 	}
 
-	verified, err = jws.VerifyWithJWK(signature, jwkKey)
+	verified, err := jws.VerifyWithJWK(signature, jwkKey)
 	if err != nil {
 		t.Fatalf("Failed to verify with JWK: %s", err.Error())
 	}
@@ -621,8 +621,5 @@ func TestVerifyErrors(t *testing.T) {
 		if err == nil {
 			t.Fatal("JWS verification should have failed")
 		}
-	})
-	t.Run("Invalid alg", func(t *testing.T) {
-		verify.New("dummy")
 	})
 }
