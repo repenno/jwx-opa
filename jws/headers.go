@@ -82,7 +82,7 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 		return v, true
 	case PrivateParamsKey:
 		v := h.PrivateParams
-		if v == nil {
+		if len(v) == 0 {
 			return nil, false
 		}
 		return v, true
@@ -93,8 +93,7 @@ func (h *StandardHeaders) Get(name string) (interface{}, bool) {
 		}
 		return v, true
 	default:
-		v, ok := h.PrivateParams[name]
-		return v, ok
+		return nil, false
 	}
 }
 
@@ -149,10 +148,6 @@ func (h *StandardHeaders) Set(name string, value interface{}) error {
 		}
 		return errors.Errorf(`invalid value for %s key: %T`, TypeKey, value)
 	default:
-		if h.PrivateParams == nil {
-			h.PrivateParams = map[string]interface{}{}
-		}
-		h.PrivateParams[name] = value
+		return errors.Errorf(`invalid key: %s`, name)
 	}
-	return nil
 }

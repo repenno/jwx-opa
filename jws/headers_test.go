@@ -17,14 +17,17 @@ func TestHeader(t *testing.T) {
   "kid": "2011-04-29"
 }`
 
+	privateHeaderParams := map[string]interface{}{"one": "1", "two": "11"}
+
 	values := map[string]interface{}{
-		jws.AlgorithmKey:   jwa.ES256,
-		jws.ContentTypeKey: "example",
-		jws.CriticalKey:    []string{"exp"},
-		jws.JWKKey:         jwkSrc,
-		jws.JWKSetURLKey:   "https://www.jwk.com/key.json",
-		jws.TypeKey:        "JWT",
-		jws.KeyIDKey:       "e9bc097a-ce51-4036-9562-d2ade882db0d",
+		jws.AlgorithmKey:     jwa.ES256,
+		jws.ContentTypeKey:   "example",
+		jws.CriticalKey:      []string{"exp"},
+		jws.JWKKey:           jwkSrc,
+		jws.JWKSetURLKey:     "https://www.jwk.com/key.json",
+		jws.TypeKey:          "JWT",
+		jws.KeyIDKey:         "e9bc097a-ce51-4036-9562-d2ade882db0d",
+		jws.PrivateParamsKey: privateHeaderParams,
 	}
 	t.Run("RoundTrip", func(t *testing.T) {
 
@@ -69,7 +72,7 @@ func TestHeader(t *testing.T) {
 			t.Fatal("Failed to JSON marshal")
 		}
 	})
-	t.Run("RoundtripError", func(t *testing.T) {
+	t.Run("RoundTripError", func(t *testing.T) {
 
 		type dummyStruct struct {
 			dummy1 int
@@ -78,13 +81,15 @@ func TestHeader(t *testing.T) {
 		dummy := &dummyStruct{1, 3.4}
 
 		values := map[string]interface{}{
-			jws.AlgorithmKey:   dummy,
-			jws.ContentTypeKey: dummy,
-			jws.CriticalKey:    dummy,
-			jws.JWKKey:         dummy,
-			jws.JWKSetURLKey:   dummy,
-			jws.KeyIDKey:       dummy,
-			jws.TypeKey:        dummy,
+			jws.AlgorithmKey:     dummy,
+			jws.ContentTypeKey:   dummy,
+			jws.CriticalKey:      dummy,
+			jws.JWKKey:           dummy,
+			jws.JWKSetURLKey:     dummy,
+			jws.KeyIDKey:         dummy,
+			jws.TypeKey:          dummy,
+			jws.PrivateParamsKey: dummy,
+			"invalid key":        "",
 		}
 
 		var h jws.StandardHeaders
@@ -94,19 +99,11 @@ func TestHeader(t *testing.T) {
 				t.Fatalf("Setting %s value should have failed", k)
 			}
 		}
-		err := h.Set("default", dummy) // private params
-		if err != nil {
-			t.Fatalf("Setting %s value failed", "default")
-		}
 		for k := range values {
 			_, ok := h.Get(k)
 			if ok {
 				t.Fatalf("Getting %s value should have failed", k)
 			}
-		}
-		_, ok := h.Get("default")
-		if !ok {
-			t.Fatal("Failed to get default value")
 		}
 	})
 	t.Run("Unknown alg", func(t *testing.T) {

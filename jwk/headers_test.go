@@ -1,7 +1,6 @@
 package jwk_test
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -57,6 +56,7 @@ func TestHeader(t *testing.T) {
 			jwk.KeyUsageKey:      dummy,
 			jwk.KeyOpsKey:        dummy,
 			jwk.PrivateParamsKey: dummy,
+			"invalid key":        "",
 		}
 
 		var h jwk.StandardHeaders
@@ -65,10 +65,6 @@ func TestHeader(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Setting %s value should have failed", k)
 			}
-		}
-		err := h.Set("Default", dummy)
-		if err != nil {
-			t.Fatalf("Setting %s value failed", "default")
 		}
 		if h.GetAlgorithm() != jwa.NoValue {
 			t.Fatalf("Algorithm should be empty string")
@@ -84,6 +80,9 @@ func TestHeader(t *testing.T) {
 		}
 		if h.GetKeyOps() != nil {
 			t.Fatalf("KeyOps should be empty string")
+		}
+		if h.GetPrivateParams() != nil {
+			t.Fatalf("Private params should be empty string")
 		}
 	})
 	t.Run("RoundTripError 2", func(t *testing.T) {
@@ -100,6 +99,7 @@ func TestHeader(t *testing.T) {
 			jwk.KeyUsageKey:      dummy,
 			jwk.KeyOpsKey:        []string{"unknown", "usage"},
 			jwk.PrivateParamsKey: dummy,
+			"invalid key":        "",
 		}
 
 		var h jwk.StandardHeaders
@@ -108,10 +108,6 @@ func TestHeader(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Setting %s value should have failed", k)
 			}
-		}
-		err := h.Set("Default", dummy)
-		if err != nil {
-			t.Fatalf("Setting %s value failed", "default")
 		}
 		if h.GetAlgorithm() != jwa.NoValue {
 			t.Fatalf("Algorithm should be empty string")
@@ -128,6 +124,9 @@ func TestHeader(t *testing.T) {
 		if h.GetKeyOps() != nil {
 			t.Fatalf("KeyOps should be empty string")
 		}
+		if h.GetPrivateParams() != nil {
+			t.Fatalf("Private params should be empty string")
+		}
 	})
 
 	t.Run("Algorithm", func(t *testing.T) {
@@ -141,8 +140,6 @@ func TestHeader(t *testing.T) {
 			if !ok {
 				t.Fatal("Failed to get algorithm")
 			}
-			vTypes := fmt.Sprintf("%T, %T", value, got)
-			fmt.Println(vTypes)
 			if value != got {
 				t.Fatalf("Algorithm values do not match %s:%s", value, got)
 			}
