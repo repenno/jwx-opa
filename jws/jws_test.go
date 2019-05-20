@@ -282,9 +282,6 @@ func TestEncode(t *testing.T) {
 		}
 		hdrBuf := base64.RawURLEncoding.EncodeToString([]byte(hdr))
 		payload := base64.RawURLEncoding.EncodeToString([]byte(examplePayload))
-		if err != nil {
-			t.Fatal("Failed to base64 encode Payload")
-		}
 
 		signingInput := strings.Join(
 			[]string{
@@ -632,6 +629,44 @@ func TestVerifyErrors(t *testing.T) {
 		_, err := jws.VerifyWithJWK([]byte("some.message.signed"), rsaPublicKey)
 		if err == nil {
 			t.Fatal("JWS verification should have failed")
+		}
+	})
+}
+
+func TestSplitCompactLongStrings(t *testing.T) {
+
+	t.Run("SplitCompact long", func(t *testing.T) {
+
+		var parts []string
+
+		// Create string with X.Y.Z
+		numX := 8000
+		numY := 8000
+		numZ := 8000
+		var largeString = ""
+		for i := 0; i < numX; i++ {
+			largeString += "X"
+		}
+		largeString += "."
+		for i := 0; i < numY; i++ {
+			largeString += "Y"
+		}
+		largeString += "."
+		for i := 0; i < numZ; i++ {
+			largeString += "Z"
+		}
+		parts, err := jws.SplitCompact(largeString)
+		if err != nil {
+			t.Fatal("Failed to split string")
+		}
+		if numX != len(parts[0]) {
+			t.Fatal("Failed to split string")
+		}
+		if numY != len(parts[1]) {
+			t.Fatal("Failed to split string")
+		}
+		if numZ != len(parts[2]) {
+			t.Fatal("Failed to split string")
 		}
 	})
 }

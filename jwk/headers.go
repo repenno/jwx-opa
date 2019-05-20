@@ -167,11 +167,5 @@ func (h StandardHeaders) Walk(f func(string, interface{}) error) error {
 			}
 		}
 	}
-
-	for k, v := range h.PrivateParams {
-		if err := f(k, v); err != nil {
-			return errors.Wrapf(err, `walk function returned error for %s`, k)
-		}
-	}
 	return nil
 }
